@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Folder, Upload, Shield, ShieldAlert, Sparkles, FileText, Trash2, CheckCircle, RefreshCcw, Eye, FileSpreadsheet } from "lucide-react";
-import { DocumentType } from "../types";
+import { DocumentType } from "../../types";
 
 interface DocumentVaultProps {
   uid: string;

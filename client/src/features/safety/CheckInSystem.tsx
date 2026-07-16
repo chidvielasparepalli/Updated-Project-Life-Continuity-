@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Clock, Sliders, Calendar, AlertTriangle, CheckCircle, Smartphone, Flame, Settings, Play, ArrowUpRight } from "lucide-react";
-import { CheckInMethod } from "../types";
+import { CheckInMethod, CheckInStatus } from "../../types";
 
 interface CheckInSystemProps {
   uid: string;

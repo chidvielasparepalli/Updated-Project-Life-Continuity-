@@ -7,6 +7,9 @@ import dotenv from "dotenv";
 import crypto from "crypto";
 import JSZip from "jszip";
 import { createClient } from "@supabase/supabase-js";
+import { google } from "googleapis";
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -16,6 +19,7 @@ const PORT = 3000;
 // Increase payload limits for base64 file uploads
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(cookieParser());
 
 // Setup folder for uploads
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
@@ -1511,6 +1515,290 @@ Email body: ${email.body}`;
   res.json({ success: true, count: processed.length, records: processed });
 });
 
+// ============================================================================
+// GMAIL OAUTH & API ROUTES (Integrated from Gmail Clone)
+// ============================================================================
+
+const gmailTokenStore = new Map<string, any>();
+
+function createOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/gmail-api/auth/callback"
+  );
+}
+
+function getGmailAuthUrl() {
+  const oauth2Client = createOAuth2Client();
+  const scopes = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.modify',
+    'openid',
+    'profile',
+    'email',
+  ];
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: scopes,
+    prompt: 'consent', // always get refresh_token
+  });
+}
+
+function getAuthenticatedGmailClient(userId: string) {
+  const tokens = gmailTokenStore.get(userId);
+  if (!tokens) throw new Error('No tokens found for user');
+  const oauth2Client = createOAuth2Client();
+  oauth2Client.setCredentials(tokens);
+
+  oauth2Client.on('tokens', (newTokens) => {
+    const merged = { ...tokens, ...newTokens };
+    gmailTokenStore.set(userId, merged);
+  });
+
+  return oauth2Client;
+}
+
+const authenticateGmail = (req: any, res: any, next: any) => {
+  const token = req.cookies?.gmail_token;
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    req.gmailUserId = (payload as any).sub;
+
+    if (!gmailTokenStore.has(req.gmailUserId)) {
+      res.clearCookie('gmail_token', { httpOnly: true });
+      return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    }
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+// --- Auth Routes ---
+app.get("/gmail-api/auth/google", (req, res) => {
+  res.redirect(getGmailAuthUrl());
+});
+
+app.get("/gmail-api/auth/callback", async (req, res) => {
+  const { code, error } = req.query;
+  const clientUrl = process.env.APP_URL || "http://localhost:3000";
+
+  if (error || !code) {
+    return res.redirect(`${clientUrl}?auth_error=${encodeURIComponent((error as string) || 'no_code')}`);
+  }
+
+  try {
+    const oauth2Client = createOAuth2Client();
+    const { tokens } = await oauth2Client.getToken(code as string);
+    
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload()!;
+    const userId = payload.sub;
+
+    gmailTokenStore.set(userId, tokens);
+
+    const jwtToken = jwt.sign(
+      { sub: userId, email: payload.email, name: payload.name, picture: payload.picture },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.cookie('gmail_token', jwtToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.redirect(clientUrl);
+  } catch (err) {
+    console.error('OAuth callback error:', err);
+    res.redirect(`${clientUrl}?auth_error=callback_failed`);
+  }
+});
+
+app.get("/gmail-api/auth/me", (req, res) => {
+  const token = req.cookies?.gmail_token;
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    if (!gmailTokenStore.has((payload as any).sub)) {
+      res.clearCookie('gmail_token', { httpOnly: true });
+      return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    }
+    res.json({
+      sub: (payload as any).sub,
+      email: (payload as any).email,
+      name: (payload as any).name,
+      picture: (payload as any).picture
+    });
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+app.post("/gmail-api/auth/logout", (req, res) => {
+  res.clearCookie('gmail_token', { httpOnly: true });
+  res.json({ success: true });
+});
+
+// --- Gmail API Routes ---
+app.get("/gmail-api/profile", authenticateGmail, async (req: any, res) => {
+  try {
+    const auth = getAuthenticatedGmailClient(req.gmailUserId);
+    const oauth2 = google.oauth2({ version: 'v2', auth });
+    const { data } = await oauth2.userinfo.get();
+    res.json({ id: data.id, email: data.email, name: data.name, picture: data.picture });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// Parsers for Gmail API
+function parseMessageMeta(msg: any) {
+  const headers = Object.fromEntries(
+    (msg.payload?.headers || []).map((h: any) => [h.name.toLowerCase(), h.value])
+  );
+  return {
+    id: msg.id,
+    threadId: msg.threadId,
+    labelIds: msg.labelIds || [],
+    snippet: msg.snippet || '',
+    internalDate: msg.internalDate,
+    from: headers['from'] || '',
+    to: headers['to'] || '',
+    subject: headers['subject'] || '(no subject)',
+    date: headers['date'] || '',
+    isUnread: (msg.labelIds || []).includes('UNREAD'),
+    isStarred: (msg.labelIds || []).includes('STARRED'),
+  };
+}
+
+function extractBody(payload: any): { html: string, text: string } {
+  if (!payload) return { html: '', text: '' };
+  if (payload.body?.data) {
+    const decoded = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+    if (payload.mimeType === 'text/html') return { html: decoded, text: '' };
+    if (payload.mimeType === 'text/plain') return { html: '', text: decoded };
+  }
+  if (payload.parts) {
+    let html = '';
+    let text = '';
+    for (const part of payload.parts) {
+      const result = extractBody(part);
+      if (result.html) html = result.html;
+      if (result.text && !text) text = result.text;
+    }
+    return { html, text };
+  }
+  return { html: '', text: '' };
+}
+
+app.get("/gmail-api/messages", authenticateGmail, async (req: any, res) => {
+  try {
+    const { label = 'INBOX', pageToken, q, maxResults = '50' } = req.query;
+    const auth = getAuthenticatedGmailClient(req.gmailUserId);
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const params: any = { userId: 'me', maxResults: Math.min(parseInt(maxResults as string, 10) || 50, 100) };
+    if (label !== 'ALL') params.labelIds = [label];
+    if (pageToken) params.pageToken = pageToken;
+    if (q) params.q = q;
+
+    const { data } = await gmail.users.messages.list(params);
+    const messages = data.messages || [];
+    
+    const BATCH = 20;
+    const detailed = [];
+    for (let i = 0; i < messages.length; i += BATCH) {
+      const batch = messages.slice(i, i + BATCH);
+      const results = await Promise.all(
+        batch.map((m: any) =>
+          gmail.users.messages.get({
+            userId: 'me',
+            id: m.id,
+            format: 'metadata',
+            metadataHeaders: ['From', 'To', 'Subject', 'Date'],
+          })
+        )
+      );
+      detailed.push(...results.map((r: any) => r.data));
+    }
+
+    res.json({ messages: detailed.map(parseMessageMeta), nextPageToken: data.nextPageToken || null });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+app.get("/gmail-api/messages/:id", authenticateGmail, async (req: any, res) => {
+  try {
+    const auth = getAuthenticatedGmailClient(req.gmailUserId);
+    const gmail = google.gmail({ version: 'v1', auth });
+    const { data } = await gmail.users.messages.get({
+      userId: 'me',
+      id: req.params.id,
+      format: 'full',
+    });
+    const meta = parseMessageMeta(data);
+    const body = extractBody(data.payload);
+    res.json({ ...meta, body });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch message' });
+  }
+});
+
+app.get("/gmail-api/labels", authenticateGmail, async (req: any, res) => {
+  try {
+    const auth = getAuthenticatedGmailClient(req.gmailUserId);
+    const gmail = google.gmail({ version: 'v1', auth });
+    const { data } = await gmail.users.labels.list({ userId: 'me' });
+    res.json({ labels: data.labels || [] });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch labels' });
+  }
+});
+
+app.post("/gmail-api/messages/:id/read", authenticateGmail, async (req: any, res) => {
+  try {
+    const auth = getAuthenticatedGmailClient(req.gmailUserId);
+    const gmail = google.gmail({ version: 'v1', auth });
+    await gmail.users.messages.modify({
+      userId: 'me',
+      id: req.params.id,
+      requestBody: { removeLabelIds: ['UNREAD'] },
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to mark message as read' });
+  }
+});
+
+app.post("/gmail-api/messages/:id/star", authenticateGmail, async (req: any, res) => {
+  try {
+    const { starred = true } = req.body;
+    const auth = getAuthenticatedGmailClient(req.gmailUserId);
+    const gmail = google.gmail({ version: 'v1', auth });
+    await gmail.users.messages.modify({
+      userId: 'me',
+      id: req.params.id,
+      requestBody: starred
+        ? { addLabelIds: ['STARRED'] }
+        : { removeLabelIds: ['STARRED'] },
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update star' });
+  }
+});
+
+// ============================================================================
+// Original Sandbox Data / Existing Mock Routes (preserved below)
+// ============================================================================
+
 app.get("/api/gmail/records/:uid", (req, res) => {
   const db = loadDb();
   res.json(db.emailRecords.filter(e => e.uid === req.params.uid));
@@ -2150,13 +2438,13 @@ Please answer the user's question, which is spoken in the audio file. Be concise
 
 // Vite frontend serving & routing setup
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && process.env.API_ONLY !== "true") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (process.env.NODE_ENV === "production") {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     // SPA fallback route for any non-API routes in Express

@@ -21,19 +21,19 @@ import {
   Languages
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import LoginScreen from "./components/LoginScreen";
-import ProfileCenter from "./components/ProfileCenter";
-import DocumentVault from "./components/DocumentVault";
-import DataExtractor from "./components/DataExtractor";
-import LifeGraphDashboard from "./components/LifeGraphDashboard";
-import EmergencyCenter from "./components/EmergencyCenter";
-import ReminderAgent from "./components/ReminderAgent";
-import CheckInSystem from "./components/CheckInSystem";
-import NomineeDashboard from "./components/NomineeDashboard";
-import FloatingChatbot from "./components/FloatingChatbot";
-import CalendarSync from "./components/CalendarSync";
-import SafetyPanel from "./components/SafetyPanel";
-import { useThemeLanguage } from "./components/ThemeLanguageContext";
+import LoginScreen from "./features/auth/LoginScreen";
+import ProfileCenter from "./features/profile/ProfileCenter";
+import DocumentVault from "./features/vault/DocumentVault";
+import GmailInbox from "./features/gmail/GmailInbox";
+import LifeGraphDashboard from "./features/dashboard/LifeGraphDashboard";
+import EmergencyCenter from "./features/safety/EmergencyCenter";
+import ReminderAgent from "./features/calendar/ReminderAgent";
+import CheckInSystem from "./features/safety/CheckInSystem";
+import NomineeDashboard from "./features/nominee/NomineeDashboard";
+import FloatingChatbot from "./features/chat/FloatingChatbot";
+import CalendarSync from "./features/calendar/CalendarSync";
+import SafetyPanel from "./features/safety/SafetyPanel";
+import { useThemeLanguage } from "./context/ThemeLanguageContext";
 
 
 type Tab =
@@ -252,7 +252,7 @@ export default function App() {
             )}
             {currentTab === "Profile" && <ProfileCenter uid={user.uid} />}
             {currentTab === "Vault" && <DocumentVault uid={user.uid} />}
-            {currentTab === "GmailSync" && <DataExtractor uid={user.uid} />}
+            {currentTab === "GmailSync" && <GmailInbox />}
             {currentTab === "SafetyCheckIn" && (
               <CheckInSystem
                 uid={user.uid}

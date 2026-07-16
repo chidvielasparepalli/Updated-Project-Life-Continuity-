@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Shield, Key, Sparkles, Phone, Lock, ArrowRight, UserCheck, Sun, Moon, Languages } from "lucide-react";
-import { useThemeLanguage } from "./ThemeLanguageContext";
+import { useThemeLanguage } from "../../context/ThemeLanguageContext";
 
 interface LoginScreenProps {
   onLoginSuccess: (user: any, role: "user" | "nominee") => void;
