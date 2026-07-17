@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AlertOctagon, Sparkles, Volume2, HelpCircle, FileText, Send, XOctagon, Check, Copy, RefreshCw } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface EmergencyCenterProps {
   uid: string;
@@ -24,7 +25,7 @@ export default function EmergencyCenter({ uid, onEmergencyStatusChanged, trigger
 
   const checkStatus = async () => {
     try {
-      const res = await fetch(`/api/emergency/status/${uid}`);
+      const res = await apiFetch(`/api/emergency/status/${uid}`);
       const data = await res.json();
       setIsActive(data.active);
       setPlan(data.plan || null);
@@ -40,7 +41,7 @@ export default function EmergencyCenter({ uid, onEmergencyStatusChanged, trigger
   const handleActivate = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/emergency/activate", {
+      const res = await apiFetch("/api/emergency/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, triggeredBy: "manual" })
@@ -59,7 +60,7 @@ export default function EmergencyCenter({ uid, onEmergencyStatusChanged, trigger
   const handleDeactivate = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/emergency/deactivate", {
+      const res = await apiFetch("/api/emergency/deactivate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid })
@@ -88,7 +89,7 @@ export default function EmergencyCenter({ uid, onEmergencyStatusChanged, trigger
     setDrafting(true);
     setCopied(false);
     try {
-      const res = await fetch("/api/emergency/draft", {
+      const res = await apiFetch("/api/emergency/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, sendTo, tone })

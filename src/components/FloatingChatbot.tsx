@@ -6,6 +6,7 @@ import {
   Check, Volume1, AudioLines
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { apiFetch } from "../lib/api";
 
 interface FloatingChatbotProps {
   uid: string;
@@ -392,7 +393,7 @@ export default function FloatingChatbot({
     abortControllerRef.current = new AbortController();
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await apiFetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -458,7 +459,7 @@ export default function FloatingChatbot({
     abortControllerRef.current = new AbortController();
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await apiFetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -538,7 +539,7 @@ export default function FloatingChatbot({
   const handleSyncCalendar = async () => {
     setSyncingCalendar(true);
     try {
-      const res = await fetch("/api/calendar/sync", {
+      const res = await apiFetch("/api/calendar/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid: isNominee ? ownerUid : uid })

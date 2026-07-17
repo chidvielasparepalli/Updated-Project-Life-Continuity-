@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { apiFetch } from "../lib/api";
 
 export type Theme = "light" | "dark";
 
@@ -433,7 +434,7 @@ export const ThemeLanguageProvider: React.FC<{ children: React.ReactNode }> = ({
           textMap[text] = text;
         });
 
-        const response = await fetch("/api/translate", {
+        const response = await apiFetch("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: textMap, targetLanguage: langOption.name })
@@ -504,7 +505,7 @@ export const ThemeLanguageProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsTranslating(true);
 
     try {
-      const response = await fetch("/api/translate", {
+      const response = await apiFetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, targetLanguage: targetLangName })

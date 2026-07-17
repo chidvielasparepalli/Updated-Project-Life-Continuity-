@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Shield, Key, Sparkles, Phone, Lock, ArrowRight, UserCheck, Sun, Moon, Languages } from "lucide-react";
 import { useThemeLanguage } from "./ThemeLanguageContext";
+import { apiFetch } from "../lib/api";
 import { SignIn, SignUp } from "@clerk/clerk-react";
 
 const clerkAppearance = {
@@ -66,7 +67,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     const payload = isSignUp ? { email, password, name } : { email, password };
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await apiFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -89,7 +90,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/google-login", {
+      const res = await apiFetch("/api/auth/google-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -112,7 +113,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,7 +140,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/nominee-otp", {
+      const res = await apiFetch("/api/auth/nominee-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone })
@@ -160,7 +161,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setNomineeError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/nominee-login", {
+      const res = await apiFetch("/api/auth/nominee-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp, pin })

@@ -40,6 +40,7 @@ import FloatingChatbot from "./components/FloatingChatbot";
 import SafetyPanel from "./components/SafetyPanel";
 import { useThemeLanguage } from "./components/ThemeLanguageContext";
 import { useUser, useClerk } from "@clerk/clerk-react";
+import { apiFetch } from "./lib/api";
 
 
 type Tab =
@@ -87,7 +88,7 @@ export default function App() {
 
       if (!user || user.uid !== uid) {
         setSyncError(null);
-        fetch("/api/auth/clerk-sync", {
+        apiFetch("/api/auth/clerk-sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, name, uid })
@@ -169,7 +170,7 @@ export default function App() {
           async (position) => {
             const { latitude, longitude } = position.coords;
             try {
-              await fetch("/api/location", {
+              await apiFetch("/api/location", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ uid: user.uid, latitude, longitude })

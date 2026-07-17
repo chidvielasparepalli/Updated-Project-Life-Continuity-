@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Mail, RefreshCw, Sliders, Sparkles, FolderSync, ExternalLink, ShieldCheck } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface DataExtractorProps {
   uid: string;
@@ -17,7 +18,7 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
 
   const checkComposioStatus = async () => {
     try {
-      const res = await fetch(`/api/composio/status/${uid}`);
+      const res = await apiFetch(`/api/composio/status/${uid}`);
       const data = await res.json();
       if (data && data.success) {
         setComposioAuthorized(data.connected);
@@ -31,7 +32,7 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
     setIsLinkingComposio(true);
     setSyncError(null);
     try {
-      const res = await fetch("/api/composio/link", {
+      const res = await apiFetch("/api/composio/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid })
@@ -54,13 +55,13 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
 
   const fetchSettingsAndRecords = async () => {
     try {
-      const sRes = await fetch(`/api/gmail/settings/${uid}`);
+      const sRes = await apiFetch(`/api/gmail/settings/${uid}`);
       const sData = await sRes.json();
       if (sData) {
         setKeywords(sData.targetKeywords || "");
       }
 
-      const rRes = await fetch(`/api/gmail/records/${uid}`);
+      const rRes = await apiFetch(`/api/gmail/records/${uid}`);
       const rData = await rRes.json();
       setEmailRecords(rData || []);
     } catch (e) {
@@ -75,7 +76,7 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
 
   const handleSaveSettings = async () => {
     try {
-      await fetch(`/api/gmail/settings/${uid}`, {
+      await apiFetch(`/api/gmail/settings/${uid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,7 +98,7 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
     await handleSaveSettings();
 
     try {
-      const res = await fetch("/api/gmail/sync", {
+      const res = await apiFetch("/api/gmail/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid })

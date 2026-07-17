@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiFetch } from "../lib/api";
 import { 
   Lock, 
   Unlock, 
@@ -45,7 +46,7 @@ export default function NomineeLockedDashboard({
 
   const safeFetchJson = async (url: string) => {
     try {
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (!res.ok) return null;
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {

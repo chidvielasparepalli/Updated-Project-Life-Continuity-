@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Clock, Sliders, Calendar, AlertTriangle, CheckCircle, Smartphone, Flame, Settings, Play, ArrowUpRight, Shield, ShieldCheck, RefreshCw, X, Heart } from "lucide-react";
 import { CheckInMethod } from "../types";
 import { triggerCheckIn } from "../lib/checkinService";
+import { apiFetch } from "../lib/api";
 
 interface CheckInSystemProps {
   uid: string;
@@ -39,14 +40,14 @@ export default function CheckInSystem({
   const loadCheckInData = async () => {
     try {
       // Get stats
-      const res = await fetch(`/api/life-graph/${uid}`);
+      const res = await apiFetch(`/api/life-graph/${uid}`);
       const data = await res.json();
       if (data) {
         setStats(data.checkInStats);
       }
 
       // Get settings
-      const setRes = await fetch(`/api/checkin/settings/${uid}`);
+      const setRes = await apiFetch(`/api/checkin/settings/${uid}`);
       const setData = await setRes.json();
       if (setData) {
         setSettings(setData);
@@ -56,12 +57,12 @@ export default function CheckInSystem({
       }
 
       // Get history
-      const histRes = await fetch(`/api/checkin/history/${uid}`);
+      const histRes = await apiFetch(`/api/checkin/history/${uid}`);
       const histData = await histRes.json();
       setHistory(histData || []);
 
       // Get events list
-      const evtsRes = await fetch(`/api/checkin/events/${uid}`);
+      const evtsRes = await apiFetch(`/api/checkin/events/${uid}`);
       const evtsData = await evtsRes.json();
       setEvents(evtsData || []);
     } catch (e) {
@@ -155,7 +156,7 @@ export default function CheckInSystem({
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch(`/api/checkin/settings/${uid}`, {
+      const res = await apiFetch(`/api/checkin/settings/${uid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -182,7 +183,7 @@ export default function CheckInSystem({
   const handleSimulateMissedCheckIn = async () => {
     setSimStatus("Escalating...");
     try {
-      const res = await fetch("/api/emergency/activate", {
+      const res = await apiFetch("/api/emergency/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

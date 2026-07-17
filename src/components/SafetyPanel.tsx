@@ -25,6 +25,7 @@ import {
   User,
   Eye
 } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface SafetyPanelProps {
   uid: string;
@@ -70,7 +71,7 @@ export default function SafetyPanel({ uid }: SafetyPanelProps) {
     const fetchSettings = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/checkin/settings/${uid}`);
+        const res = await apiFetch(`/api/checkin/settings/${uid}`);
         const data = await res.json();
         if (data) {
           setWinStart(data.checkInWindowStart || "08:00");
@@ -97,7 +98,7 @@ export default function SafetyPanel({ uid }: SafetyPanelProps) {
     setLoading(true);
     setSaveSuccess(false);
     try {
-      const res = await fetch(`/api/checkin/settings/${uid}`, {
+      const res = await apiFetch(`/api/checkin/settings/${uid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,7 +153,7 @@ export default function SafetyPanel({ uid }: SafetyPanelProps) {
           setHeartbeatActive(false);
           // Log heartbeat tested to security alerts backend
           try {
-            await fetch("/api/security/log", {
+            await apiFetch("/api/security/log", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

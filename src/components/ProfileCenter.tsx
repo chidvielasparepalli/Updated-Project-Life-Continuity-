@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ShieldCheck, RefreshCw, KeyRound, AlertTriangle, Save, Smartphone, MapPin, Clock, Plus } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface ProfileCenterProps {
   uid: string;
@@ -34,7 +35,7 @@ export default function ProfileCenter({ uid, onProfileUpdated }: ProfileCenterPr
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(`/api/profile/${uid}`);
+      const res = await apiFetch(`/api/profile/${uid}`);
       const data = await res.json();
       if (data) {
         setName(data.name || "");
@@ -56,11 +57,11 @@ export default function ProfileCenter({ uid, onProfileUpdated }: ProfileCenterPr
 
   const fetchSessionsAndAlerts = async () => {
     try {
-      const sRes = await fetch(`/api/security/sessions/${uid}`);
+      const sRes = await apiFetch(`/api/security/sessions/${uid}`);
       const sData = await sRes.json();
       setSessions(sData || []);
 
-      const aRes = await fetch(`/api/security/alerts/${uid}`);
+      const aRes = await apiFetch(`/api/security/alerts/${uid}`);
       const aData = await aRes.json();
       setAlerts(aData || []);
     } catch (e) {
@@ -79,7 +80,7 @@ export default function ProfileCenter({ uid, onProfileUpdated }: ProfileCenterPr
     setSaveSuccess(false);
 
     try {
-      const res = await fetch(`/api/profile/${uid}`, {
+      const res = await apiFetch(`/api/profile/${uid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,7 +112,7 @@ export default function ProfileCenter({ uid, onProfileUpdated }: ProfileCenterPr
 
   const handleRevokeSession = async (sessId: string) => {
     try {
-      const res = await fetch("/api/security/sessions/revoke", {
+      const res = await apiFetch("/api/security/sessions/revoke", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, sessionId: sessId })

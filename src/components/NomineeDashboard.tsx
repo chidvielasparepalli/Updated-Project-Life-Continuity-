@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NomineeLockedDashboard from "./NomineeLockedDashboard";
+import { apiFetch } from "../lib/api";
 import { 
   AlertTriangle, 
   ShieldCheck, 
@@ -52,16 +53,16 @@ export default function NomineeDashboard({
     setLoading(true);
     try {
       // 1. Fetch real status from DB
-      const statusRes = await fetch(`/api/emergency/status/${ownerUid}`);
+      const statusRes = await apiFetch(`/api/emergency/status/${ownerUid}`);
       const statusData = await statusRes.json();
       
       // 2. Fetch emergency profile
-      const pRes = await fetch(`/api/profile/${ownerUid}`);
+      const pRes = await apiFetch(`/api/profile/${ownerUid}`);
       const pData = await pRes.json();
       setProfile(pData || null);
 
       // 3. Fetch secured documents
-      const dRes = await fetch(`/api/documents/${ownerUid}`);
+      const dRes = await apiFetch(`/api/documents/${ownerUid}`);
       const dData = await dRes.json();
       const filteredDocs = dData?.filter((d: any) => d.isNomineeAccessSecured === true) || [];
       setSecuredDocs(filteredDocs);

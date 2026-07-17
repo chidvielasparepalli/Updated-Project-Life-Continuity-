@@ -1,4 +1,5 @@
 import { CheckInStats, CheckInEntry } from "../types";
+import { apiFetch } from "./api";
 
 export interface CheckInResponse {
   success: boolean;
@@ -12,7 +13,7 @@ export interface CheckInResponse {
  * Returns the fully compiled, updated stats, history and chronological events.
  */
 export async function triggerCheckIn(uid: string, method: string = "manualButton"): Promise<CheckInResponse> {
-  const res = await fetch("/api/checkin", {
+  const res = await apiFetch("/api/checkin", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -7,6 +7,7 @@ import {
   X,
   AlertCircle
 } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface ReminderAgentProps {
   uid: string;
@@ -41,7 +42,7 @@ export default function ReminderAgent({ uid }: ReminderAgentProps) {
 
   const loadReminders = async () => {
     try {
-      const res = await fetch(`/api/life-graph/${uid}`);
+      const res = await apiFetch(`/api/life-graph/${uid}`);
       const data = await res.json();
       if (data) {
         setBills(data.bills?.filter((b: any) => b.status === "Pending") || []);

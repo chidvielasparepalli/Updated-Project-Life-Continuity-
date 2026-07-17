@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { triggerCheckIn } from "../lib/checkinService";
+import { apiFetch } from "../lib/api";
 import { CheckInStats } from "../types";
 import { UnifiedEvent } from "./dashboard/types";
 
@@ -93,7 +94,7 @@ export default function LifeGraphDashboard({
   const fetchGraphData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/life-graph/${uid}`);
+      const res = await apiFetch(`/api/life-graph/${uid}`);
       const data = await res.json();
       if (data) {
         setBills(data.bills || []);
@@ -193,7 +194,7 @@ export default function LifeGraphDashboard({
     }
     setIsGoogleSyncing(true);
     try {
-      const res = await fetch("/api/calendar/sync", {
+      const res = await apiFetch("/api/calendar/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid })
@@ -225,7 +226,7 @@ export default function LifeGraphDashboard({
     e.preventDefault();
     try {
       if (customCategory === "Financial / EMI") {
-        const res = await fetch("/api/life-graph/bill", {
+        const res = await apiFetch("/api/life-graph/bill", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -244,7 +245,7 @@ export default function LifeGraphDashboard({
           fetchGraphData();
         }
       } else {
-        const res = await fetch("/api/life-graph/appointment", {
+        const res = await apiFetch("/api/life-graph/appointment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -286,7 +287,7 @@ export default function LifeGraphDashboard({
       const endpoint = event.type === "bill" 
         ? `/api/life-graph/bill/${event.id}` 
         : `/api/life-graph/appointment/${event.id}`;
-      const res = await fetch(endpoint, { method: "DELETE" });
+      const res = await apiFetch(endpoint, { method: "DELETE" });
       if (res.ok) {
         fetchGraphData();
       }
@@ -337,7 +338,7 @@ export default function LifeGraphDashboard({
     };
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await apiFetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

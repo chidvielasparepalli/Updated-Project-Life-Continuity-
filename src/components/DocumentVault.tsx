@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Folder, Upload, Shield, ShieldAlert, Sparkles, FileText, Trash2, CheckCircle, RefreshCcw, Eye, FileSpreadsheet } from "lucide-react";
+import { Folder, Upload, Shield, ShieldAlert, Sparkles, FileText, Trash2, CheckCircle, RefreshCw, Eye, FileSpreadsheet } from "lucide-react";
 import { DocumentType } from "../types";
+import { apiFetch } from "../lib/api";
 
 interface DocumentVaultProps {
   uid: string;
@@ -39,7 +40,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch(`/api/documents/${uid}`);
+      const res = await apiFetch(`/api/documents/${uid}`);
       const data = await res.json();
       setDocuments(data || []);
     } catch (e) {
@@ -50,7 +51,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
   const handleLoadPreset = async (presetKey: string) => {
     setLoadingPreset(presetKey);
     try {
-      const res = await fetch("/api/documents/preset", {
+      const res = await apiFetch("/api/documents/preset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, presetKey })
@@ -87,7 +88,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
     reader.onload = async () => {
       const base64 = reader.result as string;
       try {
-        const res = await fetch("/api/documents", {
+        const res = await apiFetch("/api/documents", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -132,7 +133,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
 
   const handleToggleNominee = async (docId: string) => {
     try {
-      const res = await fetch(`/api/documents/${docId}/toggle-nominee`, {
+      const res = await apiFetch(`/api/documents/${docId}/toggle-nominee`, {
         method: "PUT"
       });
       if (res.ok) {
@@ -149,7 +150,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
   const handleDelete = async (docId: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this document from your vault? This cannot be undone.")) return;
     try {
-      const res = await fetch(`/api/documents/${docId}`, {
+      const res = await apiFetch(`/api/documents/${docId}`, {
         method: "DELETE"
       });
       if (res.ok) {
@@ -167,7 +168,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
   const handleExtractAI = async (docId: string) => {
     setExtractingId(docId);
     try {
-      const res = await fetch(`/api/documents/${docId}/extract`, { method: "POST" });
+      const res = await apiFetch(`/api/documents/${docId}/extract`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
         fetchDocuments();
@@ -187,7 +188,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
     setExtraction(null);
     setEditingExtraction(false);
     try {
-      const res = await fetch(`/api/documents/${doc.id}/extraction`);
+      const res = await apiFetch(`/api/documents/${doc.id}/extraction`);
       const data = await res.json();
       setExtraction(data);
     } catch (e) {
@@ -199,7 +200,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
     e.preventDefault();
     if (!selectedDoc) return;
     try {
-      const res = await fetch(`/api/documents/${selectedDoc.id}/extraction`, {
+      const res = await apiFetch(`/api/documents/${selectedDoc.id}/extraction`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(extraction)
@@ -217,7 +218,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
   const handleExportZIP = async () => {
     setExportingZIP(true);
     try {
-      const res = await fetch(`/api/documents/${uid}/export-zip`, {
+      const res = await apiFetch(`/api/documents/${uid}/export-zip`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: exportPassword })
@@ -271,7 +272,7 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
     reader.onload = async () => {
       try {
         const base64 = reader.result as string;
-        const res = await fetch("/api/documents/decrypt-zip", {
+        const res = await apiFetch("/api/documents/decrypt-zip", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileBase64: base64, password: decryptPassword })
