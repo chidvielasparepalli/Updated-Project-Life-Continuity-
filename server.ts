@@ -691,9 +691,20 @@ app.post("/api/auth/google-login", async (req, res) => {
 });
 
 app.get("/api/test", (req, res) => {
+  const envStatus = {
+    COMPOSIO_API_KEY: !!process.env.COMPOSIO_API_KEY ? "SET" : "MISSING",
+    COMPOSIO_GMAIL_AUTH_CONFIG_ID: !!process.env.COMPOSIO_GMAIL_AUTH_CONFIG_ID ? "SET" : "MISSING",
+    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY ? "SET" : "MISSING",
+    CLERK_SECRET_KEY: !!process.env.CLERK_SECRET_KEY ? "SET" : "MISSING",
+    VITE_CLERK_PUBLISHABLE_KEY: !!process.env.VITE_CLERK_PUBLISHABLE_KEY ? "SET" : "MISSING",
+    NODE_ENV: process.env.NODE_ENV || "not set",
+    PORT: process.env.PORT || "3000 (default)",
+  };
   res.json({
     success: true,
-    message: "Backend reachable"
+    message: "Backend reachable",
+    timestamp: new Date().toISOString(),
+    environment: envStatus
   });
 });
 
@@ -1215,42 +1226,62 @@ app.put("/api/gmail/settings/:uid", async (req, res) => {
 });
 
 app.post("/api/composio/link", async (req, res) => {
+  console.log(`[COMPOSIO LINK] Incoming request body:`, JSON.stringify(req.body));
   const { uid } = req.body;
-  if (!uid) return res.status(400).json({ error: "uid required" });
-  const client = getComposioClient();
-  if (!client) return res.status(400).json({ error: "COMPOSIO_API_KEY is not configured" });
+  if (!uid) {
+    console.warn("[COMPOSIO LINK] Missing uid in request body");
+    return res.status(400).json({ error: "uid required" });
+  }
 
+  const apiKey = process.env.COMPOSIO_API_KEY;
   const authConfigId = process.env.COMPOSIO_GMAIL_AUTH_CONFIG_ID;
+  console.log(`[COMPOSIO LINK] Environment check: COMPOSIO_API_KEY=${apiKey ? "SET (" + apiKey.substring(0, 6) + "...)" : "MISSING"}, COMPOSIO_GMAIL_AUTH_CONFIG_ID=${authConfigId || "MISSING"}`);
+
+  const client = getComposioClient();
+  if (!client) {
+    console.error("[COMPOSIO LINK] Composio client is null - COMPOSIO_API_KEY is missing");
+    return res.status(400).json({ error: "COMPOSIO_API_KEY is not configured. Set it in Railway environment variables." });
+  }
+
   if (!authConfigId) {
-    return res.status(400).json({ error: "COMPOSIO_GMAIL_AUTH_CONFIG_ID is not configured. Run setup_composio_gmail.js first." });
+    console.error("[COMPOSIO LINK] COMPOSIO_GMAIL_AUTH_CONFIG_ID is missing");
+    return res.status(400).json({ error: "COMPOSIO_GMAIL_AUTH_CONFIG_ID is not configured. Set it in Railway environment variables." });
   }
 
   try {
-    console.log(`[COMPOSIO LINK] Generating link for user=${uid} authConfigId=${authConfigId}`);
+    console.log(`[COMPOSIO LINK] Calling client.connectedAccounts.link(uid="${uid}", authConfigId="${authConfigId}")`);
     const connectionRequest = await client.connectedAccounts.link(uid, authConfigId);
-    console.log(`[COMPOSIO LINK] Success, redirectUrl=${connectionRequest.redirectUrl}`);
+    console.log(`[COMPOSIO LINK] Success! redirectUrl=${connectionRequest.redirectUrl}`);
     res.json({ success: true, redirectUrl: connectionRequest.redirectUrl });
   } catch (err: any) {
-    console.error("[COMPOSIO LINK ERROR]", err);
-    const detail = err?.cause?.error?.error?.message || err?.message || "Failed to generate link";
+    console.error("[COMPOSIO LINK ERROR] Full error object:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+    console.error("[COMPOSIO LINK ERROR] Stack:", err?.stack);
+    const detail = err?.cause?.error?.error?.message || err?.response?.data?.message || err?.message || "Failed to generate link";
     res.status(500).json({ error: detail });
   }
 });
 
 app.get("/api/composio/status/:uid", async (req, res) => {
   const { uid } = req.params;
+  console.log(`[COMPOSIO STATUS] Checking status for uid=${uid}`);
   const client = getComposioClient();
-  if (!client) return res.json({ success: true, connected: false, message: "Composio is disabled" });
+  if (!client) {
+    console.warn("[COMPOSIO STATUS] Client is null - COMPOSIO_API_KEY missing");
+    return res.json({ success: true, connected: false, message: "Composio is disabled (COMPOSIO_API_KEY not set)" });
+  }
   try {
+    console.log(`[COMPOSIO STATUS] Calling connectedAccounts.list for uid=${uid}`);
     const accounts = await client.connectedAccounts.list({ userIds: [uid], statuses: ["ACTIVE"] });
+    console.log(`[COMPOSIO STATUS] Got ${(accounts.items || []).length} accounts`);
     const isConnected = (accounts.items || []).some((acc: any) =>
       (acc.toolkit && (acc.toolkit.slug === "gmail" || acc.toolkit.id === "gmail")) ||
       (acc.app && (acc.app.slug === "gmail" || acc.app.id === "gmail")) ||
       acc.appId === "gmail"
     );
+    console.log(`[COMPOSIO STATUS] isConnected=${isConnected}`);
     res.json({ success: true, connected: isConnected });
   } catch (err: any) {
-    console.error("[COMPOSIO STATUS ERROR]", err);
+    console.error("[COMPOSIO STATUS ERROR]", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
     res.json({ success: true, connected: false, error: err.message });
   }
 });
