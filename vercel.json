@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://updated-project-life-continuity-production.up.railway.app/api/:path*"
+      "destination": "https://lfecontinuityai.up.railway.app/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
