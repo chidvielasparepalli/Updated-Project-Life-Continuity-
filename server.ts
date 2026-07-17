@@ -22,10 +22,28 @@ const allowedOrigins = [
   "http://localhost:3000"
 ];
 
+// Early logging middleware for debugging CORS and request flow
+app.use((req, res, next) => {
+  console.log(`[EARLY REQUEST LOG] Method: ${req.method}, URL: ${req.url}, Origin: ${req.headers.origin}`);
+  next();
+});
+
+// Middleware log before CORS
+app.use((req, res, next) => {
+  console.log(`[BEFORE CORS MIDDLEWARE] Method: ${req.method}, URL: ${req.url}`);
+  next();
+});
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost:")) {
+    console.log(`[CORS ORIGIN CHECK] Request Origin: "${origin}"`);
+    if (!origin) {
+      console.log(`[CORS ORIGIN CHECK] Allowed (No origin, e.g. same-origin or server-to-server)`);
+      return callback(null, true);
+    }
+    const isAllowed = allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost:");
+    console.log(`[CORS ORIGIN CHECK] Origin "${origin}" allowed: ${isAllowed}`);
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(null, false);
@@ -36,7 +54,19 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
+// Middleware log before JSON parser
+app.use((req, res, next) => {
+  console.log(`[BEFORE JSON PARSER] Method: ${req.method}, URL: ${req.url}`);
+  next();
+});
+
 app.use(express.json({ limit: "50mb" }));
+
+// Middleware log after JSON parser
+app.use((req, res, next) => {
+  console.log(`[AFTER JSON PARSER] Method: ${req.method}, URL: ${req.url}, Body Keys: ${req.body ? Object.keys(req.body) : 'none'}`);
+  next();
+});
 
 // Setup folder for uploads
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
@@ -878,93 +908,108 @@ app.post("/api/auth/google-login", (req, res) => {
 
 // Clerk Authentication User Synchronization
 app.post("/api/auth/clerk-sync", (req, res) => {
-  const { email, name, uid } = req.body;
-  if (!email || !uid) {
-    return res.status(400).json({ error: "Missing Clerk profile info" });
-  }
+  console.log(`[CLERK-SYNC POST ROUTE HIT] Method: ${req.method}, Headers: ${JSON.stringify(req.headers)}`);
+  try {
+    const { email, name, uid } = req.body;
+    console.log(`[CLERK-SYNC POST BODY] email: "${email}", name: "${name}", uid: "${uid}"`);
 
-  const db = loadDb();
-  let user = db.users[uid];
-
-  if (!user) {
-    // If user exists with the same email but different ID, we can link them or keep separate.
-    // Given mock DB, let's look up by email as fallback, but primary index is uid (clerk ID).
-    user = Object.values(db.users).find((u: any) => u.email.toLowerCase() === email.toLowerCase()) as any;
-
-    if (user) {
-      // Re-map user under their new Clerk uid
-      const oldUid = user.uid;
-      user.uid = uid;
-      db.users[uid] = user;
-      delete db.users[oldUid];
-
-      // Update associated tables
-      if (db.emergencyProfiles[oldUid]) {
-        db.emergencyProfiles[uid] = { ...db.emergencyProfiles[oldUid], uid };
-        delete db.emergencyProfiles[oldUid];
-      }
-      if (db.checkInSettings[oldUid]) {
-        db.checkInSettings[uid] = { ...db.checkInSettings[oldUid], uid };
-        delete db.checkInSettings[oldUid];
-      }
-      if (db.checkInStats[oldUid]) {
-        db.checkInStats[uid] = { ...db.checkInStats[oldUid], uid };
-        delete db.checkInStats[oldUid];
-      }
-
-      saveDb(db);
-      logAlert(uid, "Account Linked", `Linked existing user account ${email} to Clerk ID ${uid}`);
-    } else {
-      // Create new user under Clerk ID
-      user = {
-        uid,
-        email,
-        name: name || email.split("@")[0],
-        createdAt: new Date().toISOString()
-      };
-      db.users[uid] = user;
-
-      db.emergencyProfiles[uid] = {
-        uid,
-        name: name || email.split("@")[0],
-        age: 30,
-        bloodGroup: "O+",
-        emergencyContactName: "",
-        emergencyContactPhone: "",
-        medicalInfo: "",
-        nomineePin: "1111",
-        nomineePhone: "",
-        nomineeName: "",
-        trustedContacts: []
-      };
-
-      db.checkInSettings[uid] = {
-        uid,
-        checkInWindowStart: "08:00",
-        checkInWindowEnd: "20:00",
-        reminderIntervals: [120, 60, 15],
-        gracePeriodMinutes: 120
-      };
-
-      db.checkInStats[uid] = {
-        uid,
-        currentStreak: 0,
-        longestStreak: 0,
-        lastCheckInDate: null,
-        lastCheckInTimestamp: null,
-        status: "Verified",
-        lastKnownLocation: null
-      };
-
-      saveDb(db);
-      logAlert(uid, "Account Created", "User signed up/registered via Clerk.");
+    if (!email || !uid) {
+      console.warn("[CLERK-SYNC POST] Missing email or uid in body!");
+      return res.status(400).json({ error: "Missing Clerk profile info" });
     }
+
+    const db = loadDb();
+    let user = db.users[uid];
+
+    if (!user) {
+      console.log(`[CLERK-SYNC POST] User not found by uid: "${uid}". Searching by email fallback...`);
+      // If user exists with the same email but different ID, we can link them or keep separate.
+      // Given mock DB, let's look up by email as fallback, but primary index is uid (clerk ID).
+      user = Object.values(db.users).find((u: any) => u.email.toLowerCase() === email.toLowerCase()) as any;
+
+      if (user) {
+        console.log(`[CLERK-SYNC POST] User found by email fallback: "${user.uid}". Re-mapping user...`);
+        // Re-map user under their new Clerk uid
+        const oldUid = user.uid;
+        user.uid = uid;
+        db.users[uid] = user;
+        delete db.users[oldUid];
+
+        // Update associated tables
+        if (db.emergencyProfiles[oldUid]) {
+          db.emergencyProfiles[uid] = { ...db.emergencyProfiles[oldUid], uid };
+          delete db.emergencyProfiles[oldUid];
+        }
+        if (db.checkInSettings[oldUid]) {
+          db.checkInSettings[uid] = { ...db.checkInSettings[oldUid], uid };
+          delete db.checkInSettings[oldUid];
+        }
+        if (db.checkInStats[oldUid]) {
+          db.checkInStats[uid] = { ...db.checkInStats[oldUid], uid };
+          delete db.checkInStats[oldUid];
+        }
+
+        saveDb(db);
+        logAlert(uid, "Account Linked", `Linked existing user account ${email} to Clerk ID ${uid}`);
+      } else {
+        console.log(`[CLERK-SYNC POST] Creating new user for uid: "${uid}"`);
+        // Create new user under Clerk ID
+        user = {
+          uid,
+          email,
+          name: name || email.split("@")[0],
+          createdAt: new Date().toISOString()
+        };
+        db.users[uid] = user;
+
+        db.emergencyProfiles[uid] = {
+          uid,
+          name: name || email.split("@")[0],
+          age: 30,
+          bloodGroup: "O+",
+          emergencyContactName: "",
+          emergencyContactPhone: "",
+          medicalInfo: "",
+          nomineePin: "1111",
+          nomineePhone: "",
+          nomineeName: "",
+          trustedContacts: []
+        };
+
+        db.checkInSettings[uid] = {
+          uid,
+          checkInWindowStart: "08:00",
+          checkInWindowEnd: "20:00",
+          reminderIntervals: [120, 60, 15],
+          gracePeriodMinutes: 120
+        };
+
+        db.checkInStats[uid] = {
+          uid,
+          currentStreak: 0,
+          longestStreak: 0,
+          lastCheckInDate: null,
+          lastCheckInTimestamp: null,
+          status: "Verified",
+          lastKnownLocation: null
+        };
+
+        saveDb(db);
+        logAlert(uid, "Account Created", "User signed up/registered via Clerk.");
+      }
+    } else {
+      console.log(`[CLERK-SYNC POST] Found existing user: ${JSON.stringify(user)}`);
+    }
+
+    recordCheckIn(user.uid, "login");
+    logAlert(user.uid, "User Sign In", `Logged in via Clerk Authentication`);
+
+    console.log(`[CLERK-SYNC POST] Sending success response for user: "${user.uid}"`);
+    res.json({ user });
+  } catch (err: any) {
+    console.error(`[CLERK-SYNC POST EXCEPTION] Error: ${err.message}`, err.stack);
+    res.status(500).json({ error: "Internal server error during Clerk sync", details: err.message });
   }
-
-  recordCheckIn(user.uid, "login");
-  logAlert(user.uid, "User Sign In", `Logged in via Clerk Authentication`);
-
-  res.json({ user });
 });
 
 // Tab 1: Nominee Send OTP
