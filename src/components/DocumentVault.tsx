@@ -477,146 +477,115 @@ export default function DocumentVault({ uid }: DocumentVaultProps) {
         </div>
       </div>
 
-      {/* Encrypted Backup Engine Card */}
-      <div className="bg-[#2c3353] rounded-2xl border border-[#5d6fa3]/30 shadow-lg p-6 space-y-4">
-        <div className="flex items-center gap-3 border-b border-[#5d6fa3]/20 pb-3">
-          <div className="h-10 w-10 bg-[#1e233a] rounded-lg flex items-center justify-center text-[#e0dafc] border border-[#5d6fa3]/25">
-            <Shield className="h-5 w-5" />
+      {/* Encrypted Backup Engine Card replaced with a Simple Button Flow */}
+      <div className="space-y-3">
+        {showExportPass ? (
+          <div className="p-4 bg-[#1e233a] border border-[#5d6fa3]/30 rounded-2xl space-y-2.5 animate-fade-in shadow-md">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-[#e0dafc] uppercase tracking-wider">Set Encryption Passphrase</label>
+              <button
+                onClick={() => setShowExportPass(false)}
+                className="text-[10px] text-[#5d6fa3] hover:text-[#e0dafc] font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                placeholder="Enter passphrase"
+                value={exportPassword}
+                onChange={(e) => setExportPassword(e.target.value)}
+                className="flex-1 bg-[#2c3353] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-[#e0dafc]"
+              />
+              <button
+                onClick={handleExportZIP}
+                disabled={exportingZIP || !exportPassword}
+                className="px-4 py-2.5 bg-[#e0dafc] text-[#2c3353] font-black text-xs rounded-xl hover:brightness-110 disabled:opacity-50 shrink-0 transition-all cursor-pointer"
+              >
+                {exportingZIP ? "Exporting..." : "Download"}
+              </button>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-bold text-white">Encrypted Backup Engine</h3>
-            <p className="text-xs text-[#5d6fa3]">Export & Decrypt Vault Archives</p>
-          </div>
-        </div>
-
-        <div className="space-y-3.5">
-          {/* Export section */}
-          <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase text-[#5d6fa3] tracking-wider">Secure ZIP Export</p>
-            <p className="text-[10px] text-indigo-200/70 leading-normal">Download your entire vault as a password-secured, military-grade encrypted archive.</p>
-            
-            {showExportPass ? (
-              <div className="p-3 bg-[#1e233a] border border-[#5d6fa3]/20 rounded-xl space-y-2.5 animate-fade-in">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[#5d6fa3] uppercase">Set Encryption Key</label>
+        ) : showDecryptTool ? (
+          <div className="p-4 bg-[#1e233a] border border-[#5d6fa3]/30 rounded-2xl space-y-3 animate-fade-in shadow-md">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-[#e0dafc] uppercase tracking-wider">Import & Decrypt Backup</label>
+              <button
+                onClick={() => { setShowDecryptTool(false); resetDecryptState(); }}
+                className="text-[10px] text-[#5d6fa3] hover:text-[#e0dafc] font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              <input
+                type="file"
+                accept=".enc"
+                onChange={handleDecryptFileSelect}
+                className="w-full text-[10px] text-[#5d6fa3] bg-[#2c3353] border border-[#5d6fa3]/30 rounded-xl p-2 focus:outline-none"
+              />
+              {decryptFile && (
+                <div className="flex gap-2">
                   <input
                     type="password"
-                    required
-                    placeholder="Enter decryption password"
-                    value={exportPassword}
-                    onChange={(e) => setExportPassword(e.target.value)}
-                    className="w-full bg-[#2c3353] border border-[#5d6fa3]/30 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-400"
+                    placeholder="Enter passphrase"
+                    value={decryptPassword}
+                    onChange={(e) => setDecryptPassword(e.target.value)}
+                    className="flex-1 bg-[#2c3353] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-[#e0dafc]"
                   />
-                </div>
-                <div className="flex justify-end gap-1.5">
                   <button
-                    onClick={() => setShowExportPass(false)}
-                    className="px-2.5 py-1.5 bg-[#2c3353] text-[#5d6fa3] text-[10px] font-bold rounded-lg hover:bg-[#5d6fa3]/10"
+                    onClick={handleDecryptSubmit}
+                    disabled={decrypting || !decryptPassword}
+                    className="px-4 py-2.5 bg-[#e0dafc] text-[#2c3353] font-black text-xs rounded-xl hover:brightness-110 disabled:opacity-50 shrink-0 transition-all cursor-pointer"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleExportZIP}
-                    disabled={exportingZIP || !exportPassword}
-                    className="px-2.5 py-1.5 bg-gradient-to-tr from-indigo-500 to-purple-600 text-white text-[10px] font-bold rounded-lg hover:brightness-115 disabled:opacity-50"
-                  >
-                    {exportingZIP ? "Exporting..." : "Download encrypted ZIP"}
+                    {decrypting ? "Decrypting..." : "Decrypt"}
                   </button>
                 </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setShowExportPass(true); setShowDecryptTool(false); }}
-                className="w-full py-2.5 bg-[#1e233a] hover:bg-[#1e233a]/80 text-[#e0dafc] border border-[#5d6fa3]/30 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
-                Export Encrypted Vault ZIP
-              </button>
-            )}
-          </div>
-
-          <div className="border-t border-[#5d6fa3]/10 pt-3 space-y-2">
-            <p className="text-[10px] font-black uppercase text-[#5d6fa3] tracking-wider">Vault Decryption Utility</p>
-            <p className="text-[10px] text-indigo-200/70 leading-normal">Recover files from a previously exported `.enc` backup file directly in your browser.</p>
-
-            {showDecryptTool ? (
-              <div className="p-3 bg-[#1e233a] border border-[#5d6fa3]/20 rounded-xl space-y-2.5 animate-fade-in">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[#5d6fa3] uppercase">Select Backup Archive (.enc)</label>
-                  <input
-                    type="file"
-                    accept=".enc"
-                    onChange={handleDecryptFileSelect}
-                    className="w-full text-[10px] text-[#5d6fa3] bg-[#2c3353] border border-[#5d6fa3]/30 rounded-lg p-1.5 focus:outline-none"
-                  />
+              )}
+              {decryptError && (
+                <p className="text-[10px] text-red-400 font-bold leading-normal">{decryptError}</p>
+              )}
+              {decryptedFiles.length > 0 && (
+                <div className="space-y-1.5 mt-1 border-t border-[#5d6fa3]/10 pt-2">
+                  <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Decrypted Assets ({decryptedFiles.length})</p>
+                  <div className="max-h-[120px] overflow-y-auto space-y-1">
+                    {decryptedFiles.map((file, i) => (
+                      <div key={i} className="flex items-center justify-between p-2 bg-[#2c3353] rounded-lg text-[10px] border border-[#5d6fa3]/15">
+                        <span className="truncate text-white font-medium pr-2">{file.name}</span>
+                        <a
+                          href={file.base64}
+                          download={file.name}
+                          className="px-2 py-1 bg-emerald-500 hover:bg-emerald-400 text-[#1e233a] font-bold rounded text-[8px] uppercase tracking-wider transition-colors"
+                        >
+                          Save
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                {decryptFile && (
-                  <div className="space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-[#5d6fa3] uppercase">Enter Encryption Key</label>
-                      <input
-                        type="password"
-                        required
-                        placeholder="Passphrase used during export"
-                        value={decryptPassword}
-                        onChange={(e) => setDecryptPassword(e.target.value)}
-                        className="w-full bg-[#2c3353] border border-[#5d6fa3]/30 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-400"
-                      />
-                    </div>
-                    {decryptError && (
-                      <p className="text-[10px] text-red-400 font-bold leading-normal">{decryptError}</p>
-                    )}
-                    <div className="flex justify-end gap-1.5">
-                      <button
-                        onClick={() => { setShowDecryptTool(false); resetDecryptState(); }}
-                        className="px-2.5 py-1.5 bg-[#2c3353] text-[#5d6fa3] text-[10px] font-bold rounded-lg hover:bg-[#5d6fa3]/10"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleDecryptSubmit}
-                        disabled={decrypting || !decryptPassword}
-                        className="px-2.5 py-1.5 bg-[#e0dafc] text-[#2c3353] text-[10px] font-black rounded-lg hover:brightness-115 disabled:opacity-50"
-                      >
-                        {decrypting ? "Decrypting..." : "Decrypt Archive"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Display Decrypted files */}
-                {decryptedFiles.length > 0 && (
-                  <div className="space-y-2 border-t border-[#5d6fa3]/15 pt-2 mt-2">
-                    <p className="text-[9px] font-bold text-emerald-400 uppercase">Decrypted Assets ({decryptedFiles.length})</p>
-                    <div className="max-h-[150px] overflow-y-auto space-y-1">
-                      {decryptedFiles.map((file, i) => (
-                        <div key={i} className="flex items-center justify-between p-1.5 bg-[#2c3353] rounded-lg text-[10px] border border-[#5d6fa3]/15">
-                          <span className="truncate text-white font-medium pr-2">{file.name}</span>
-                          <a
-                            href={file.base64}
-                            download={file.name}
-                            className="px-1.5 py-0.5 bg-emerald-500 hover:bg-emerald-400 text-[#1e233a] font-bold rounded text-[8px] uppercase tracking-wider"
-                          >
-                            Save
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => { setShowDecryptTool(true); setShowExportPass(false); }}
-                className="w-full py-2.5 bg-[#1e233a] hover:bg-[#1e233a]/80 text-[#e0dafc] border border-[#5d6fa3]/30 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <RefreshCcw className="h-4 w-4 text-purple-400" />
-                Open Decryption Terminal
-              </button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowExportPass(true); setShowDecryptTool(false); }}
+              className="flex-1 py-3 bg-[#1e233a] hover:bg-[#1e233a]/80 text-[#e0dafc] border border-[#5d6fa3]/30 hover:border-indigo-400/50 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md"
+            >
+              <Shield className="h-4 w-4 text-emerald-400" />
+              Export Encrypted Vault ZIP
+            </button>
+            <button
+              onClick={() => { setShowDecryptTool(true); setShowExportPass(false); }}
+              className="px-3 py-3 bg-transparent hover:bg-[#1e233a]/40 text-[#5d6fa3] hover:text-[#e0dafc] border border-dashed border-[#5d6fa3]/20 hover:border-[#5d6fa3]/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+              title="Open Decrypt Utility"
+            >
+              <RefreshCcw className="h-3.5 w-3.5 text-purple-400" />
+              Decrypt
+            </button>
+          </div>
+        )}
       </div>
     </div>
 

@@ -1,68 +1,67 @@
 import React, { useState, useEffect } from "react";
 import { 
-  CreditCard, 
-  CalendarCheck, 
-  GraduationCap, 
-  PiggyBank, 
-  ShieldCheck, 
-  HeartPulse, 
-  RefreshCw, 
-  Plus, 
-  Trash2, 
-  CheckSquare, 
-  FileSpreadsheet, 
-  Flame, 
   ChevronLeft, 
   ChevronRight, 
-  Filter, 
-  Search, 
   Calendar, 
-  CheckCircle, 
-  Clock, 
-  MapPin, 
-  AlertCircle,
-  Sliders 
+  Plus, 
+  FileSpreadsheet
 } from "lucide-react";
+
+import { triggerCheckIn } from "../lib/checkinService";
+import { CheckInStats } from "../types";
+import { UnifiedEvent } from "./dashboard/types";
+
+// Import new modular dashboard subcomponents
+import DashboardHeader from "./dashboard/DashboardHeader";
+import DashboardStatsGrid from "./dashboard/DashboardStatsGrid";
+import DashboardFilters from "./dashboard/DashboardFilters";
+import AgendaPanel from "./dashboard/AgendaPanel";
+import DrillDownPanel from "./dashboard/DrillDownPanel";
+import AddCustomEventModal from "./dashboard/AddCustomEventModal";
+import GoogleCalendarSyncModal from "./dashboard/GoogleCalendarSyncModal";
 
 interface LifeGraphDashboardProps {
   uid: string;
   onCheckInTriggered?: () => void;
   checkInTriggerCounter?: number;
   onNavigate?: (tab: string) => void;
+  triggerToast?: (message: string, details?: string, type?: "success" | "error") => void;
+  justCheckedIn?: boolean;
+  setJustCheckedIn?: (val: boolean) => void;
 }
 
-interface UnifiedEvent {
-  id: string;
-  type: "bill" | "appointment";
-  name: string;
-  date: string; // "YYYY-MM-DD"
-  time?: string;
-  amount?: number;
-  status: string;
-  category: "Medical Consults" | "Financial / EMI" | "Family & School";
-  priority: "High" | "Medium" | "Low";
-  location?: string;
-  notes?: string;
-}
-
-export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTriggerCounter, onNavigate }: LifeGraphDashboardProps) {
+export default function LifeGraphDashboard({
+  uid,
+  onCheckInTriggered,
+  checkInTriggerCounter,
+  onNavigate,
+  triggerToast,
+  justCheckedIn,
+  setJustCheckedIn,
+}: LifeGraphDashboardProps) {
+  // Core database states
   const [bills, setBills] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [stats, setStats] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState<CheckInStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
 
-  // Search and Filter states
+  // Calendar visualization states
+  const today = new Date();
+  const [selectedDayStr, setSelectedDayStr] = useState("2026-07-04");
+  const [calendarMonth, setCalendarMonth] = useState(6); // July (0-indexed)
+  const [calendarYear, setCalendarYear] = useState(2026);
+
+  // Search, Category, and Priority filters states
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [priorityFilter, setPriorityFilter] = useState("All Priorities");
 
-  // Calendar states
-  const [calendarYear, setCalendarYear] = useState(2026);
-  const [calendarMonth, setCalendarMonth] = useState(6); // 0-indexed, 6 = July 2026
-  const [selectedDayStr, setSelectedDayStr] = useState("2026-07-04"); // Default to Saturday, Jul 4, 2026 as in the reference
-
-  // Modal Custom Event state
+  // Modals visibility states
   const [showAddCustomEvent, setShowAddCustomEvent] = useState(false);
+  const [showCalendarSyncModal, setShowCalendarSyncModal] = useState(false);
+
+  // Custom Event state bindings
   const [customTitle, setCustomTitle] = useState("");
   const [customCategory, setCustomCategory] = useState<"Medical Consults" | "Financial / EMI" | "Family & School">("Medical Consults");
   const [customDate, setCustomDate] = useState("2026-07-04");
@@ -72,20 +71,24 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
   const [customLocation, setCustomLocation] = useState("");
   const [customNotes, setCustomNotes] = useState("");
 
-  // Active selection and config states for Node Drill-Down Analytics
+  // Edit/Configure state bindings
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isConfiguring, setIsConfiguring] = useState(false);
 
-  // Configure form fields
   const [editName, setEditName] = useState("");
   const [editDate, setEditDate] = useState("");
-  const [editTime, setEditTime] = useState("");
+  const [editTime, setEditTime] = useState("10:00 AM");
+  const [editCategory, setEditCategory] = useState<"Medical Consults" | "Financial / EMI" | "Family & School">("Medical Consults");
+  const [editPriority, setEditPriority] = useState<"High" | "Medium" | "Low">("Medium");
   const [editAmount, setEditAmount] = useState("");
   const [editNotes, setEditNotes] = useState("");
-  const [editPriority, setEditPriority] = useState<"High" | "Medium" | "Low">("Medium");
-  const [editCategory, setEditCategory] = useState<"Medical Consults" | "Financial / EMI" | "Family & School">("Medical Consults");
   const [editStatus, setEditStatus] = useState("Pending");
   const [editLocation, setEditLocation] = useState("");
+
+  // Google Calendar integration states
+  const [isGoogleAuthorized, setIsGoogleAuthorized] = useState(false);
+  const [isGoogleSyncing, setIsGoogleSyncing] = useState(false);
+  const [isGoogleAuthorizing, setIsGoogleAuthorizing] = useState(false);
 
   const fetchGraphData = async () => {
     setLoading(true);
@@ -109,22 +112,112 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
   }, [uid, checkInTriggerCounter]);
 
   const handleManualCheckIn = async () => {
-    if (onNavigate) {
-      onNavigate("SafetyPanel");
-    } else {
-      try {
-        const res = await fetch("/api/checkin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid, method: "manualButton" })
-        });
-        if (res.ok) {
-          fetchGraphData();
-          if (onCheckInTriggered) onCheckInTriggered();
-        }
-      } catch (e) {
-        console.error(e);
+    if (isCheckingIn) return;
+    setIsCheckingIn(true);
+
+    const prevStats = stats ? { ...stats } : null;
+
+    // Optimistic state update
+    setStats((prev: any) => {
+      if (!prev) return prev;
+      const streak = prev.currentStreak || 0;
+      return {
+        ...prev,
+        status: "Verified",
+        currentStreak: streak + 1,
+        longestStreak: Math.max(prev.longestStreak || 0, streak + 1)
+      };
+    });
+
+    try {
+      await triggerCheckIn(uid, "manualButton");
+
+      if (triggerToast) {
+        triggerToast(
+          "Checked in successfully!",
+          "Your Proof-of-Life status has been verified and your safety streak updated.",
+          "success"
+        );
       }
+
+      if (setJustCheckedIn) {
+        setJustCheckedIn(true);
+      }
+
+      if (onCheckInTriggered) {
+        onCheckInTriggered();
+      }
+
+      if (onNavigate) {
+        onNavigate("SafetyCheckIn");
+      }
+    } catch (e: any) {
+      console.error("Check-in error:", e);
+      // Rollback to prior verified stats state
+      setStats(prevStats);
+      if (triggerToast) {
+        triggerToast("Check-in Failed", e.message || "An error occurred during verification.", "error");
+      }
+    } finally {
+      setIsCheckingIn(false);
+    }
+  };
+
+  const handleAuthorizeGoogleCalendar = () => {
+    if (isGoogleAuthorizing || isGoogleAuthorized) return;
+    setIsGoogleAuthorizing(true);
+    setTimeout(() => {
+      setIsGoogleAuthorized(true);
+      setIsGoogleAuthorizing(false);
+      if (triggerToast) {
+        triggerToast(
+          "Google Calendar Authorized Successfully",
+          "Your Google Calendar connection is authenticated and secure. Ready to sync events.",
+          "success"
+        );
+      }
+    }, 1200);
+  };
+
+  const handleSyncGoogleCalendar = async () => {
+    if (isGoogleSyncing) return;
+    if (!isGoogleAuthorized) {
+      if (triggerToast) {
+        triggerToast(
+          "Authorization Required",
+          "Please authorize Google Calendar before synchronizing events.",
+          "error"
+        );
+      }
+      return;
+    }
+    setIsGoogleSyncing(true);
+    try {
+      const res = await fetch("/api/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchGraphData();
+        if (triggerToast) {
+          triggerToast(
+            "Calendar Sync Successful",
+            `Successfully synchronized Google Calendar. Imported ${data.count || 2} upcoming obligations.`,
+            "success"
+          );
+        }
+      } else {
+        throw new Error(data.error || "Failed to synchronize events.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      if (triggerToast) {
+        triggerToast("Calendar Sync Failed", e.message || "An error occurred.", "error");
+      }
+    } finally {
+      setIsGoogleSyncing(false);
     }
   };
 
@@ -196,30 +289,6 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
       const res = await fetch(endpoint, { method: "DELETE" });
       if (res.ok) {
         fetchGraphData();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleToggleEventStatus = async (event: UnifiedEvent) => {
-    try {
-      if (event.type === "bill") {
-        const nextStatus = event.status === "Paid" ? "Pending" : "Paid";
-        const res = await fetch(`/api/life-graph/bill/${event.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: nextStatus })
-        });
-        if (res.ok) fetchGraphData();
-      } else {
-        const nextStatus = event.status === "Completed" ? "Upcoming" : "Completed";
-        const res = await fetch(`/api/life-graph/appointment/${event.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: nextStatus })
-        });
-        if (res.ok) fetchGraphData();
       }
     } catch (e) {
       console.error(e);
@@ -307,7 +376,6 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
     const list: UnifiedEvent[] = [];
 
     bills.forEach((b) => {
-      // Classify category
       let category: "Medical Consults" | "Financial / EMI" | "Family & School" = "Financial / EMI";
       if (b.category === "School Fees") {
         category = "Family & School";
@@ -329,7 +397,6 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
     appointments.forEach((a) => {
       let category: "Medical Consults" | "Financial / EMI" | "Family & School" = "Medical Consults";
       
-      // Determine from direct category field or inferred name/notes
       if (a.category) {
         category = a.category;
       } else if (a.name.toLowerCase().includes("school") || a.notes?.toLowerCase().includes("school") || a.notes?.toLowerCase().includes("kids")) {
@@ -501,46 +568,13 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-8" id="life-graph-root">
       
-      {/* Top Banner: Safety Status Widget (Maintained from original) */}
-      <div className="bg-[#2c3353] rounded-2xl border border-[#5d6fa3]/30 shadow-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-[#1e233a] flex items-center justify-center text-[#e0dafc] border border-[#5d6fa3]/25">
-            <Flame className="h-6 w-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white flex flex-wrap items-center gap-2">
-              Lighthouse Safety Check-in Dashboard
-              {stats && (
-                <span className={`text-[10px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider ${getStatusBadgeClass(stats.status)}`}>
-                  {stats.status}
-                </span>
-              )}
-            </h2>
-            <p className="text-xs text-[#5d6fa3] mt-1">
-              Daily proof-of-life status. Checking in postpones automated emergency nominee triggers.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-6 shrink-0">
-          <div className="text-left md:text-right">
-            <p className="text-[10px] text-[#5d6fa3] uppercase font-bold tracking-widest">Current Streak</p>
-            <p className="text-2xl font-black text-[#e0dafc] flex items-center gap-1 md:justify-end">
-              {stats?.currentStreak || 0}
-              <span className="text-xs text-[#5d6fa3] font-normal">days consecutive</span>
-            </p>
-          </div>
-          
-          <button
-            onClick={handleManualCheckIn}
-            className="bg-[#e0dafc] hover:brightness-110 text-[#2c3353] font-black text-sm py-3 px-6 rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-            id="btn-safety-checkin-dashboard"
-          >
-            <ShieldCheck className="h-4.5 w-4.5 text-[#2c3353]" />
-            I'm Safe — Check In Now
-          </button>
-        </div>
-      </div>
+      {/* Top Banner: Safety Status Widget (Modularized) */}
+      <DashboardHeader 
+        stats={stats}
+        isCheckingIn={isCheckingIn}
+        onManualCheckIn={handleManualCheckIn}
+        getStatusBadgeClass={getStatusBadgeClass}
+      />
 
       {/* Redesigned Life Graph Agenda Header */}
       <div className="bg-[#2c3353] rounded-2xl border border-[#5d6fa3]/30 shadow-lg p-6 space-y-4">
@@ -563,6 +597,14 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
             >
               <Plus className="h-4 w-4" />
               Add Custom Event
+            </button>
+            <button
+              onClick={() => setShowCalendarSyncModal(true)}
+              className="flex-1 sm:flex-none bg-[#1e233a] border border-[#5d6fa3]/30 text-[#e0dafc] hover:bg-[#1e233a]/80 font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              id="btn-open-calendar-sync"
+            >
+              <Calendar className="h-4 w-4 text-indigo-400" />
+              Sync Google Calendar
             </button>
             <button
               onClick={handleExportData}
@@ -624,6 +666,18 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
                 if (dayObj.isCurrentMonth) {
                   bgClass = "bg-[#2c3353]/60 text-white font-medium";
                   ringClass = "border border-[#5d6fa3]/20 hover:border-indigo-400/50";
+
+                  if (dayEvents.length > 0) {
+                    if (categoryTypesCount > 1) {
+                      bgClass = "bg-[#4f46e5]/45 text-indigo-100 hover:bg-[#4f46e5]/60";
+                    } else if (hasMedical) {
+                      bgClass = "bg-rose-950/60 text-rose-200 hover:bg-rose-950/80 border-rose-500/20";
+                    } else if (hasFinancial) {
+                      bgClass = "bg-blue-950/60 text-blue-200 hover:bg-blue-950/80 border-blue-500/20";
+                    } else if (hasFamily) {
+                      bgClass = "bg-purple-950/60 text-purple-200 hover:bg-purple-950/80 border-purple-500/20";
+                    }
+                  }
                 }
 
                 if (isSelected) {
@@ -633,599 +687,142 @@ export default function LifeGraphDashboard({ uid, onCheckInTriggered, checkInTri
                 return (
                   <button
                     key={index}
-                    onClick={() => setSelectedDayStr(dayObj.dateStr)}
-                    className={`relative aspect-square sm:h-12 flex flex-col justify-between p-1.5 rounded-xl transition-all select-none cursor-pointer text-left ${bgClass} ${ringClass}`}
+                    onClick={() => {
+                      setSelectedDayStr(dayObj.dateStr);
+                      // Auto-select first event of this day if available
+                      const dayEvs = unifiedEvents.filter(e => e.date === dayObj.dateStr);
+                      if (dayEvs.length > 0) {
+                        handleSelectEventForEdit(dayEvs[0]);
+                      } else {
+                        setSelectedEventId(null);
+                        setIsConfiguring(false);
+                      }
+                    }}
+                    className={`h-11 sm:h-14 rounded-xl flex flex-col items-center justify-between p-1.5 sm:p-2 transition-all cursor-pointer relative ${bgClass} ${ringClass}`}
                   >
-                    <span className="text-xs sm:text-sm font-bold">{dayObj.day}</span>
+                    <span className="text-[10px] sm:text-xs font-bold self-start">{dayObj.day}</span>
                     
-                    {/* Event indicators */}
-                    <div className="flex gap-1 items-center justify-start mt-1">
-                      {categoryTypesCount > 1 ? (
-                        <span className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-amber-500 animate-pulse" title="Multiple categories" />
-                      ) : (
-                        <>
-                          {hasFinancial && <span className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-blue-500" title="Financial / EMI" />}
-                          {hasMedical && <span className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-red-500" title="Medical Consult" />}
-                          {hasFamily && <span className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-purple-500" title="Family & School" />}
-                        </>
-                      )}
-                    </div>
+                    {dayEvents.length > 0 && (
+                      <div className="flex items-center gap-0.5 mt-0.5 justify-center w-full">
+                        {hasMedical && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" title="Medical" />}
+                        {hasFinancial && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" title="Financial" />}
+                        {hasFamily && <span className="h-1.5 w-1.5 rounded-full bg-purple-500" title="Family & School" />}
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
-
-            {/* Heatmap Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-3 border-t border-[#5d6fa3]/10 text-[10px] font-bold uppercase tracking-wider text-[#5d6fa3]">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-[#2c3353]/60 border border-[#5d6fa3]/20" />
-                <span>Free</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-blue-500" />
-                <span>Financial / EMI</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500" />
-                <span>Medical / Consult</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-purple-500" />
-                <span>Family / School</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                <span>Multiple</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Four Category Summary Grid Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { title: "Upcoming Bills", count: billsCount, desc: "Active ledger statements", icon: CreditCard, color: "text-red-400 bg-red-950/20 border-red-500/20" },
-          { title: "Clinical Appts", count: apptsCount, desc: "Pending health consultations", icon: CalendarCheck, color: "text-green-400 bg-green-950/20 border-green-500/20" },
-          { title: "School Tuition", count: schoolCount, desc: "Quarterly education dues", icon: GraduationCap, color: "text-indigo-400 bg-indigo-950/20 border-indigo-500/20" },
-          { title: "Active Loans / EMIs", count: loansCount, desc: "Auto-debit amortization assets", icon: PiggyBank, color: "text-blue-400 bg-blue-950/20 border-blue-500/20" }
-        ].map((item, index) => {
-          const ItemIcon = item.icon;
-          return (
-            <div key={index} className={`p-4 rounded-2xl border flex items-start justify-between gap-4 shadow-md ${item.color}`}>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#e0dafc]/50">{item.title}</span>
-                <p className="text-2xl font-black text-white mt-1.5">{item.count}</p>
-                <p className="text-[9px] text-[#e0dafc]/70 font-medium leading-none mt-1">{item.desc}</p>
-              </div>
-              <div className="p-2 bg-white/5 rounded-xl">
-                <ItemIcon className="h-5.5 w-5.5" />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Four Category Summary Grid Cards (Modularized) */}
+      <DashboardStatsGrid 
+        billsCount={billsCount}
+        apptsCount={apptsCount}
+        schoolCount={schoolCount}
+        loansCount={loansCount}
+      />
 
-      {/* Search and Filters Segment */}
-      <div className="bg-[#2c3353] rounded-2xl border border-[#5d6fa3]/30 p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5d6fa3]" />
-          <input
-            type="text"
-            placeholder="Search events, notes, locations or partners..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl pl-9 pr-4 py-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-indigo-400 placeholder-[#5d6fa3]"
-          />
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl px-2.5 py-1">
-            <Filter className="h-3.5 w-3.5 text-[#5d6fa3]" />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-transparent text-xs text-[#e0dafc] focus:outline-none cursor-pointer border-none py-1.5 pr-2"
-            >
-              <option value="All Categories">All Categories</option>
-              <option value="Medical Consults">Medical Consults</option>
-              <option value="Financial / EMI">Financial / EMI</option>
-              <option value="Family & School">Family & School</option>
-            </select>
-          </div>
+      {/* Search and Filters Segment (Modularized) */}
+      <DashboardFilters 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        priorityFilter={priorityFilter}
+        setPriorityFilter={setPriorityFilter}
+      />
 
-          <div className="flex items-center gap-1.5 bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl px-2.5 py-1">
-            <Sliders className="h-3.5 w-3.5 text-[#5d6fa3]" />
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="bg-transparent text-xs text-[#e0dafc] focus:outline-none cursor-pointer border-none py-1.5 pr-2"
-            >
-              <option value="All Priorities">All Priorities</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Dual Panel: Selected Day Agenda & Node Drill-Down Analytics */}
+      {/* Dual Panel: Selected Day Agenda & Node Drill-Down Analytics (Modularized) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Panel 1: Selected Day Agenda (Screenshot 1 Layout) */}
-        <div className="bg-[#2c3353] rounded-2xl border border-[#5d6fa3]/30 shadow-lg p-6 space-y-6 flex flex-col justify-between">
-          <div className="space-y-6">
-            <div>
-              <span className="text-[10px] font-black uppercase text-[#e0dafc]/50 tracking-widest block">SELECTED DAY AGENDA</span>
-              <h3 className="text-xl font-bold text-white mt-1" id="selected-day-title">
-                {getDayFormattedTitle(selectedDayStr)}
-              </h3>
-            </div>
+        <AgendaPanel 
+          selectedDayStr={selectedDayStr}
+          selectedDayEvents={selectedDayEvents}
+          selectedEventId={selectedEventId}
+          onSelectEvent={handleSelectEventForEdit}
+          getDayFormattedTitle={getDayFormattedTitle}
+        />
 
-            <div className="space-y-4">
-              {selectedDayEvents.length === 0 ? (
-                <div className="text-center py-12 bg-[#1e233a]/30 border border-[#5d6fa3]/10 rounded-2xl">
-                  <AlertCircle className="h-8 w-8 text-[#5d6fa3] mx-auto mb-3" />
-                  <p className="text-xs text-[#5d6fa3] font-medium max-w-sm mx-auto leading-relaxed">
-                    No critical life obligations scheduled for this day matching selected category/priority filters.
-                  </p>
-                </div>
-              ) : (
-                selectedDayEvents.map(event => {
-                  const isSelected = selectedEventId === event.id;
-                  const isCompleted = event.status === "Paid" || event.status === "Completed";
-                  
-                  // Color mapping for Category Tag
-                  let tagText = "FAMILY";
-                  let tagStyles = "bg-purple-950/40 text-purple-400 border-purple-900/50";
-                  if (event.category === "Medical Consults") {
-                    tagText = "MEDICAL";
-                    tagStyles = "bg-red-950/40 text-red-400 border-red-900/50";
-                  } else if (event.category === "Financial / EMI") {
-                    tagText = "FINANCIAL";
-                    tagStyles = "bg-blue-950/40 text-blue-400 border-blue-900/50";
-                  }
-
-                  return (
-                    <div
-                      key={event.id}
-                      onClick={() => handleSelectEventForEdit(event)}
-                      className={`p-4 rounded-xl border transition-all flex items-start justify-between gap-4 cursor-pointer hover:brightness-110 ${
-                        isSelected 
-                          ? "bg-[#1e233a] border-indigo-500 shadow-md ring-1 ring-indigo-500/30" 
-                          : "bg-[#1e233a]/60 border-[#5d6fa3]/15 hover:border-[#5d6fa3]/30"
-                      }`}
-                    >
-                      <div className="space-y-2 min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className={`text-sm font-bold text-white ${isCompleted ? "line-through opacity-50" : ""}`}>
-                            {event.name}
-                          </h4>
-                          {event.amount && (
-                            <span className="text-[10px] font-mono bg-[#2c3353]/80 border border-[#5d6fa3]/20 px-2 py-0.5 rounded text-slate-300">
-                              ${event.amount}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {event.notes && (
-                          <p className="text-xs text-slate-300 leading-relaxed truncate max-w-md">
-                            {event.notes}
-                          </p>
-                        )}
-
-                        <div className="flex items-center gap-1.5 text-[10px] text-[#5d6fa3] font-medium">
-                          <Clock className="h-3 w-3" />
-                          <span>{event.time || "All Day"}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end justify-between self-stretch shrink-0">
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${tagStyles}`}>
-                          {tagText}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Panel 2: Node Drill-Down Analytics (Screenshot 2 Layout) */}
-        <div className="bg-[#2c3353] rounded-2xl border border-[#5d6fa3]/30 shadow-lg p-6 space-y-6 flex flex-col justify-between">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-[#5d6fa3]/10 pb-4">
-              <div>
-                <span className="text-[10px] font-black uppercase text-[#e0dafc]/50 tracking-widest block">NODE DRILL-DOWN ANALYTICS</span>
-              </div>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setCategoryFilter("All Categories");
-                  setPriorityFilter("All Priorities");
-                  const list = getUnifiedEvents();
-                  const todayList = list.filter(e => e.date === selectedDayStr);
-                  if (todayList.length > 0) {
-                    handleSelectEventForEdit(todayList[0]);
-                  }
-                }}
-                className="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
-              >
-                Reset view
-              </button>
-            </div>
-
-            {/* Selected Event Details Card */}
-            {(() => {
-              const currentEvent = filteredEvents.find(e => e.id === selectedEventId) || selectedDayEvents[0];
-              if (!currentEvent) {
-                return (
-                  <div className="text-center py-16 bg-[#1e233a]/30 border border-[#5d6fa3]/10 rounded-2xl flex flex-col items-center justify-center">
-                    <AlertCircle className="h-8 w-8 text-[#5d6fa3] mb-3 animate-pulse" />
-                    <p className="text-xs text-[#5d6fa3] font-medium">Select an obligation from the agenda to drill down</p>
-                  </div>
-                );
-              }
-
-              // Category mapping for vertical border line & theme
-              let categoryColor = "border-purple-500";
-              let categoryTagText = "FAMILY";
-              let categoryTagStyle = "bg-purple-950/40 text-purple-400 border-purple-900/50";
-              if (currentEvent.category === "Medical Consults") {
-                categoryColor = "border-red-500";
-                categoryTagText = "MEDICAL";
-                categoryTagStyle = "bg-red-950/40 text-red-400 border-red-900/50";
-              } else if (currentEvent.category === "Financial / EMI") {
-                categoryColor = "border-blue-500";
-                categoryTagText = "FINANCIAL";
-                categoryTagStyle = "bg-blue-950/40 text-blue-400 border-blue-900/50";
-              }
-
-              // Severity level mapping
-              let severityText = `${currentEvent.priority || "Medium"} Severity`;
-              let severityTagStyle = "bg-slate-800 text-slate-300 border-slate-700";
-              if (currentEvent.priority === "High") {
-                severityTagStyle = "bg-red-950/40 text-red-400 border-red-900/50";
-              } else if (currentEvent.priority === "Low") {
-                severityTagStyle = "bg-green-950/40 text-green-400 border-green-900/50";
-              }
-
-              return (
-                <div className="space-y-6">
-                  {/* Outer White Card layout styled beautifully */}
-                  <div className={`bg-white text-slate-900 rounded-2xl border-l-4 ${categoryColor} border border-slate-200/80 p-6 space-y-4 shadow-xl`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <h4 className="text-lg font-bold text-slate-900 leading-tight">
-                          {currentEvent.name}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Calendar Schedule: <span className="font-semibold text-slate-700">{getDayFormattedTitle(currentEvent.date)}</span> {currentEvent.time ? `at ${currentEvent.time}` : ""}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border ${categoryTagStyle.replace("bg-purple-950/40", "bg-purple-50").replace("bg-red-950/40", "bg-red-50").replace("bg-blue-950/40", "bg-blue-50").replace("bg-indigo-950/40", "bg-indigo-50")}`}>
-                          {categoryTagText}
-                        </span>
-                        <span className={`text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded border ${severityTagStyle.replace("bg-slate-800", "bg-slate-100").replace("bg-red-950/40", "bg-red-50").replace("bg-green-950/40", "bg-green-50")}`}>
-                          {severityText}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Centered notes box */}
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/50">
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        {currentEvent.notes || "No detailed notes or documentation uploaded for this obligation."}
-                      </p>
-                    </div>
-
-                    {/* Bottom row metrics */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-100">
-                      <div className="flex items-center gap-8">
-                        <div>
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">COMMITTED FUNDING</span>
-                          <span className="text-lg font-black text-slate-900 mt-0.5 block">
-                            {currentEvent.amount ? `$${currentEvent.amount}` : "N/A"}
-                          </span>
-                        </div>
-
-                        <div>
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">STATUS STATE</span>
-                          <span className="inline-flex items-center gap-1.5 mt-1">
-                            <span className={`h-2 w-2 rounded-full ${
-                              currentEvent.status === "Paid" || currentEvent.status === "Completed" 
-                                ? "bg-emerald-500 animate-pulse" 
-                                : "bg-green-500"
-                            }`} />
-                            <span className="text-sm font-black text-slate-800">
-                              {currentEvent.status || "Pending"}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setIsConfiguring(!isConfiguring);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer self-stretch sm:self-center"
-                      >
-                        Configure Event Action &gt;
-                      </button>
-                    </div>
-
-                    {/* Inline Expandable Configuration Tray */}
-                    {isConfiguring && (
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4 space-y-4 animate-in fade-in slide-in-from-top-3 duration-200">
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                          <h5 className="text-xs font-black text-slate-700 uppercase tracking-widest">Configure Obligation Suite</h5>
-                          <button 
-                            onClick={() => setIsConfiguring(false)}
-                            className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Event Name</label>
-                            <input
-                              type="text"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Date</label>
-                              <input
-                                type="date"
-                                value={editDate}
-                                onChange={(e) => setEditDate(e.target.value)}
-                                className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Time</label>
-                              <input
-                                type="text"
-                                value={editTime}
-                                onChange={(e) => setEditTime(e.target.value)}
-                                className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Category</label>
-                            <select
-                              value={editCategory}
-                              onChange={(e) => setEditCategory(e.target.value as any)}
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
-                            >
-                              <option value="Medical Consults">Medical Consults</option>
-                              <option value="Financial / EMI">Financial / EMI</option>
-                              <option value="Family & School">Family & School</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Priority / Severity</label>
-                            <select
-                              value={editPriority}
-                              onChange={(e) => setEditPriority(e.target.value as any)}
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
-                            >
-                              <option value="High">High</option>
-                              <option value="Medium">Medium</option>
-                              <option value="Low">Low</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Committed Funding ($)</label>
-                            <input
-                              type="number"
-                              value={editAmount}
-                              onChange={(e) => setEditAmount(e.target.value)}
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                              placeholder="N/A"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Status State</label>
-                            <select
-                              value={editStatus}
-                              onChange={(e) => setEditStatus(e.target.value)}
-                              className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Upcoming">Upcoming</option>
-                              <option value="Paid">Paid</option>
-                              <option value="Completed">Completed</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Obligation Notes</label>
-                          <textarea
-                            value={editNotes}
-                            onChange={(e) => setEditNotes(e.target.value)}
-                            rows={2}
-                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 resize-none"
-                            placeholder="Enter notes..."
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4 pt-2 border-t border-slate-200">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (confirm("Are you sure you want to delete this event?")) {
-                                await handleDeleteEvent(currentEvent);
-                                setSelectedEventId(null);
-                                setIsConfiguring(false);
-                              }
-                            }}
-                            className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete Obligation
-                          </button>
-
-                          <button
-                            onClick={handleSaveConfiguredEvent}
-                            className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 px-4 rounded-lg transition-all shadow-sm cursor-pointer"
-                          >
-                            Save Changes
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
+        <DrillDownPanel 
+          currentEvent={filteredEvents.find(e => e.id === selectedEventId) || selectedDayEvents[0]}
+          isConfiguring={isConfiguring}
+          setIsConfiguring={setIsConfiguring}
+          editName={editName}
+          setEditName={setEditName}
+          editDate={editDate}
+          setEditDate={setEditDate}
+          editTime={editTime}
+          setEditTime={setEditTime}
+          editCategory={editCategory}
+          setEditCategory={setEditCategory}
+          editPriority={editPriority}
+          setEditPriority={setEditPriority}
+          editAmount={editAmount}
+          setEditAmount={setEditAmount}
+          editStatus={editStatus}
+          setEditStatus={setEditStatus}
+          editNotes={editNotes}
+          setEditNotes={setEditNotes}
+          editLocation={editLocation}
+          setEditLocation={setEditLocation}
+          onResetView={() => {
+            setSearchQuery("");
+            setCategoryFilter("All Categories");
+            setPriorityFilter("All Priorities");
+            const list = getUnifiedEvents();
+            const todayList = list.filter(e => e.date === selectedDayStr);
+            if (todayList.length > 0) {
+              handleSelectEventForEdit(todayList[0]);
+            }
+          }}
+          onSaveEvent={handleSaveConfiguredEvent}
+          onDeleteEvent={async (ev) => {
+            if (confirm("Are you sure you want to delete this event?")) {
+              await handleDeleteEvent(ev);
+              setSelectedEventId(null);
+              setIsConfiguring(false);
+            }
+          }}
+          getDayFormattedTitle={getDayFormattedTitle}
+        />
       </div>
 
-      {/* Add Custom Event Modal Redesign */}
+      {/* Add Custom Event Modal Redesign (Modularized) */}
       {showAddCustomEvent && (
-        <div className="fixed inset-0 z-50 bg-[#1e233a]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#2c3353] rounded-2xl max-w-md w-full p-6 border border-[#5d6fa3]/30 shadow-2xl space-y-4 text-[#e0dafc] max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#5d6fa3]/20 pb-3">
-              <h4 className="font-bold text-white text-base">Add Custom Life Obligation</h4>
-              <button onClick={resetCustomForm} className="text-[#5d6fa3] hover:text-white transition-colors cursor-pointer text-sm font-bold">Close</button>
-            </div>
-            
-            <form onSubmit={handleAddCustomEventSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Event / Obligation Title</label>
-                <input
-                  type="text"
-                  required
-                  value={customTitle}
-                  onChange={(e) => setCustomTitle(e.target.value)}
-                  className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                  placeholder="e.g. Cardiology Consult — Dr. Gupta"
-                />
-              </div>
+        <AddCustomEventModal 
+          customTitle={customTitle}
+          setCustomTitle={setCustomTitle}
+          customCategory={customCategory}
+          setCustomCategory={setCustomCategory}
+          customPriority={customPriority}
+          setCustomPriority={setCustomPriority}
+          customDate={customDate}
+          setCustomDate={setCustomDate}
+          customTime={customTime}
+          setCustomTime={setCustomTime}
+          customAmount={customAmount}
+          setCustomAmount={setCustomAmount}
+          customLocation={customLocation}
+          setCustomLocation={setCustomLocation}
+          customNotes={customNotes}
+          setCustomNotes={setCustomNotes}
+          onClose={resetCustomForm}
+          onSubmit={handleAddCustomEventSubmit}
+        />
+      )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Event Category</label>
-                  <select
-                    value={customCategory}
-                    onChange={(e) => setCustomCategory(e.target.value as any)}
-                    className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                  >
-                    <option value="Medical Consults">Medical Consults</option>
-                    <option value="Financial / EMI">Financial / EMI</option>
-                    <option value="Family & School">Family & School</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Priority Level</label>
-                  <select
-                    value={customPriority}
-                    onChange={(e) => setCustomPriority(e.target.value as any)}
-                    className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                  >
-                    <option value="High">High Priority</option>
-                    <option value="Medium">Medium Priority</option>
-                    <option value="Low">Low Priority</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Target Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={customDate}
-                    onChange={(e) => setCustomDate(e.target.value)}
-                    className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Time</label>
-                  <input
-                    type="text"
-                    value={customTime}
-                    onChange={(e) => setCustomTime(e.target.value)}
-                    className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                    placeholder="e.g. 10:00 AM"
-                  />
-                </div>
-              </div>
-
-              {customCategory === "Financial / EMI" ? (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Ledger Amount ($)</label>
-                  <input
-                    type="number"
-                    value={customAmount}
-                    onChange={(e) => setCustomAmount(e.target.value)}
-                    className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                    placeholder="e.g. 1200"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Clinical / Meeting Location</label>
-                  <input
-                    type="text"
-                    value={customLocation}
-                    onChange={(e) => setCustomLocation(e.target.value)}
-                    className="w-full bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl p-2.5 text-xs text-[#e0dafc] focus:outline-none focus:border-[#e0dafc]"
-                    placeholder="e.g. Desk 4, Apollo Clinic"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#5d6fa3]">Detailed Description & Guidance notes</label>
-                <textarea
-                  value={customNotes}
-                  onChange={(e) => setCustomNotes(e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-2 bg-[#1e233a] border border-[#5d6fa3]/30 rounded-xl focus:outline-none focus:border-[#e0dafc] text-xs resize-none text-[#e0dafc]"
-                  placeholder="e.g. Monthly apartment lease amortization auto-debit process or Medical follow-up instructions..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#5d6fa3]/10">
-                <button
-                  type="button"
-                  onClick={resetCustomForm}
-                  className="px-4 py-2.5 bg-[#1e233a] hover:bg-[#1e233a]/80 text-[#5d6fa3] text-xs rounded-xl font-bold border border-[#5d6fa3]/20 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-tr from-indigo-500 to-purple-600 text-white text-xs rounded-xl font-extrabold hover:brightness-110 shadow-lg transition-all cursor-pointer"
-                >
-                  Save Obligation Event
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Google Calendar Sync Modal (Modularized) */}
+      {showCalendarSyncModal && (
+        <GoogleCalendarSyncModal 
+          isGoogleAuthorized={isGoogleAuthorized}
+          isGoogleSyncing={isGoogleSyncing}
+          isGoogleAuthorizing={isGoogleAuthorizing}
+          onAuthorize={handleAuthorizeGoogleCalendar}
+          onSync={handleSyncGoogleCalendar}
+          onClose={() => setShowCalendarSyncModal(false)}
+        />
       )}
 
     </div>

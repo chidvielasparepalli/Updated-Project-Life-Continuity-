@@ -18,7 +18,11 @@ import {
   Sparkles,
   Sun,
   Moon,
-  Languages
+  Languages,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import LoginScreen from "./components/LoginScreen";
@@ -31,7 +35,6 @@ import ReminderAgent from "./components/ReminderAgent";
 import CheckInSystem from "./components/CheckInSystem";
 import NomineeDashboard from "./components/NomineeDashboard";
 import FloatingChatbot from "./components/FloatingChatbot";
-import CalendarSync from "./components/CalendarSync";
 import SafetyPanel from "./components/SafetyPanel";
 import { useThemeLanguage } from "./components/ThemeLanguageContext";
 
@@ -44,7 +47,6 @@ type Tab =
   | "SafetyCheckIn"
   | "EmergencyActivation"
   | "ReminderAgent"
-  | "CalendarSync"
   | "SafetyPanel"
   | "NomineeDashboard";
 
@@ -64,6 +66,29 @@ export default function App() {
   const [checkInTriggerCounter, setCheckInTriggerCounter] = useState(0);
   const [showQuickAccess, setShowQuickAccess] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Shared check-in state
+  const [justCheckedIn, setJustCheckedIn] = useState(false);
+  const [toast, setToast] = useState<{ message: string; details?: string; type: "success" | "error" | null }>({
+    message: "",
+    details: "",
+    type: null
+  });
+
+  const triggerToast = (message: string, details?: string, type: "success" | "error" = "success") => {
+    setToast({ message, details, type });
+  };
+
+  useEffect(() => {
+    if (toast.message) {
+      const timer = setTimeout(() => {
+        setToast({ message: "", details: "", type: null });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.message]);
 
   // Sync state between dashboard safety check-ins and the full safety panel
   const handleCheckInTriggered = () => {
@@ -136,252 +161,521 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen ${theme === "light" ? "bg-[#e0dafc] text-black theme-light-container" : "bg-[#2c3353] text-[#e0dafc] theme-dark-container"} flex flex-col relative pb-28 transition-colors duration-300`}>
+    <div className={`min-h-screen ${theme === "light" ? "bg-[#e0dafc] text-black theme-light-container" : "bg-[#2c3353] text-[#e0dafc] theme-dark-container"} flex flex-col lg:flex-row relative transition-colors duration-300`}>
       
-      {/* Top Brand Header */}
-      <header className={`${theme === "light" ? "bg-white border-b border-indigo-200" : "bg-[#2c3353] border-b border-[#5d6fa3]/30"} py-4 px-6 flex items-center justify-between shrink-0 shadow-md transition-colors duration-300`}>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 bg-[#e0dafc] rounded-xl flex items-center justify-center text-[#2c3353] shadow-md border border-indigo-300/30">
-            <Shield className="h-5.5 w-5.5 text-indigo-700" />
+      {/* -------------------------------------------------------------
+          1. PERSISTENT SIDEBAR (Desktop & Tablet Landscape >= 1024px)
+          ------------------------------------------------------------- */}
+      <aside className={`h-screen sticky top-0 lg:flex hidden flex-col justify-between shrink-0 select-none border-r transition-all duration-300 z-30 ${
+        theme === "light" ? "bg-white border-indigo-100 text-indigo-950" : "bg-[#1e233a] border-[#5d6fa3]/20 text-[#e0dafc]"
+      } ${isSidebarCollapsed ? "w-20" : "w-64"}`}>
+        
+        {/* Top Branding / Logo & Collapse button */}
+        <div className="p-4 flex items-center justify-between border-b border-[#5d6fa3]/10 shrink-0">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="h-10 w-10 bg-[#e0dafc] rounded-xl flex items-center justify-center text-[#2c3353] shadow-md border border-indigo-300/30 shrink-0">
+              <Shield className="h-5.5 w-5.5 text-indigo-700" />
+            </div>
+            {!isSidebarCollapsed && (
+              <div className="animate-fade-in shrink-0">
+                <h1 className="font-black text-sm text-inherit tracking-tight flex items-center gap-1">
+                  {t("brandName")}
+                  <span className="text-[8px] bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t("brandBadge")}</span>
+                </h1>
+                <p className="text-[9px] text-indigo-700/80 dark:text-indigo-300/80 font-medium truncate">{t("secureSession")}</p>
+              </div>
+            )}
           </div>
-          <div>
-            <h1 className="font-black text-base text-inherit tracking-tight flex items-center gap-1.5">
-              {t("brandName")} <span className="text-[10px] bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-400/20 uppercase tracking-widest">{t("brandBadge")}</span>
-            </h1>
-            <p className="text-[10px] text-indigo-700/80 dark:text-indigo-200/80 font-medium hidden sm:block">{t("brandTagline")} • {t("secureSession")}</p>
+          
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-inherit cursor-pointer"
+            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        </div>
+
+        {/* Scrollable Navigation links list */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {/* General Section */}
+          <div className="space-y-1">
+            {!isSidebarCollapsed && (
+              <h3 className="px-3 text-[9px] font-bold text-[#5d6fa3] uppercase tracking-wider mb-2">General Portal</h3>
+            )}
+            {[
+              { id: "Dashboard", label: t("tabDashboard") || "Dashboard", icon: LayoutDashboard },
+              { id: "Profile", label: t("tabProfile") || "Security Profile", icon: KeyRound },
+              { id: "Vault", label: t("tabVault") || "Secure Vault", icon: FolderOpen },
+              { id: "GmailSync", label: t("tabGmailSync") || "Gmail Sync", icon: Mail },
+              { id: "ReminderAgent", label: t("tabReminderAgent") || "Reminder Agent", icon: Bell },
+            ].map((item) => {
+              const IconComp = item.icon;
+              const isSelected = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentTab(item.id as Tab)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-indigo-600 text-white font-bold shadow-md"
+                      : "text-inherit hover:bg-black/5 dark:hover:bg-white/5"
+                  } ${isSidebarCollapsed ? "justify-center" : "justify-start"}`}
+                  title={item.label}
+                >
+                  <IconComp className="h-5 w-5 shrink-0" />
+                  {!isSidebarCollapsed && <span className="text-xs">{item.label}</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Safety Handover & Emergency Section */}
+          <div className="space-y-1">
+            {!isSidebarCollapsed && (
+              <h3 className="px-3 text-[9px] font-bold text-[#5d6fa3] uppercase tracking-wider mb-2">Safety & Handover</h3>
+            )}
+            {[
+              { id: "SafetyPanel", label: t("tabSafetyPanel") || "Resilience Settings", icon: Sliders },
+              { id: "SafetyCheckIn", label: "Proof-of-Life Check-In", icon: CheckCircle },
+              { id: "EmergencyActivation", label: "Emergency Handover", icon: ShieldAlert },
+              { id: "NomineeDashboard", label: "Nominee Portal View", icon: Eye },
+            ].map((item) => {
+              const IconComp = item.icon;
+              const isSelected = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentTab(item.id as Tab)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-indigo-600 text-white font-bold shadow-md"
+                      : "text-inherit hover:bg-black/5 dark:hover:bg-white/5"
+                  } ${isSidebarCollapsed ? "justify-center" : "justify-start"}`}
+                  title={item.label}
+                >
+                  <IconComp className="h-5 w-5 shrink-0" />
+                  {!isSidebarCollapsed && <span className="text-xs truncate">{item.label}</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Theme Selector */}
+        {/* Sidebar Footer Controls */}
+        <div className="p-3 border-t border-[#5d6fa3]/10 space-y-3 shrink-0">
+          
+          {/* Quick theme & lang row */}
+          {!isSidebarCollapsed ? (
+            <div className="flex items-center justify-between gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
+              <button
+                onClick={toggleTheme}
+                className="flex-1 py-1.5 flex items-center justify-center rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-inherit cursor-pointer transition-colors"
+                title={t("themeSelector")}
+              >
+                {theme === "light" ? (
+                  <Moon className="h-4 w-4 text-indigo-700" />
+                ) : (
+                  <Sun className="h-4 w-4 text-amber-400" />
+                )}
+              </button>
+              <div className="relative flex-1 py-1.5 flex items-center justify-center rounded-lg border-l border-[#5d6fa3]/10">
+                <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-300 shrink-0 mr-1" />
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="bg-transparent text-[9px] font-black uppercase text-inherit border-none outline-none cursor-pointer pr-1"
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="text-black bg-white dark:bg-[#1e233a] dark:text-white uppercase font-bold text-[10px]">
+                      {lang.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-inherit cursor-pointer"
+                title={t("themeSelector")}
+              >
+                {theme === "light" ? <Moon className="h-4 w-4 text-indigo-700" /> : <Sun className="h-4 w-4 text-amber-400" />}
+              </button>
+            </div>
+          )}
+
+          {/* User profile details / logout */}
+          {!isSidebarCollapsed ? (
+            <div className="bg-black/5 dark:bg-white/5 p-2 rounded-xl flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-inherit truncate leading-tight">{user.name}</p>
+                <p className="text-[9px] text-[#5d6fa3] truncate font-mono">{user.email}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg shrink-0 cursor-pointer transition-all"
+                title={t("logout")}
+              >
+                <LogOut className="h-4.5 w-4.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center p-2 text-red-500 hover:bg-red-500/10 rounded-xl cursor-pointer"
+              title={t("logout")}
+            >
+              <LogOut className="h-4.5 w-4.5" />
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* -------------------------------------------------------------
+          2. STICKY MOBILE & TABLET HEADER (< 1024px)
+          ------------------------------------------------------------- */}
+      <header className={`lg:hidden flex items-center justify-between sticky top-0 z-30 h-16 px-4 sm:px-6 shadow-md border-b shrink-0 transition-colors duration-300 ${
+        theme === "light" ? "bg-white border-indigo-200 text-indigo-950" : "bg-[#1e233a] border-[#5d6fa3]/30 text-[#e0dafc]"
+      }`}>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="p-2 -ml-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-inherit cursor-pointer"
+            aria-label="Open menu"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="h-8 w-8 bg-[#e0dafc] rounded-lg flex items-center justify-center text-[#2c3353] border border-indigo-300/30">
+            <Shield className="h-4.5 w-4.5 text-indigo-700" />
+          </div>
+          <span className="font-black text-sm tracking-tight uppercase text-inherit">
+            {t("brandName")}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Mobile Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2.5 bg-white/10 hover:bg-white/20 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-inherit border border-transparent hover:border-[#5d6fa3]/30 transition-all cursor-pointer"
+            className="p-2 bg-white/5 hover:bg-white/10 dark:bg-white/5 rounded-xl text-inherit cursor-pointer"
             title={t("themeSelector")}
-            id="btn-toggle-theme"
           >
-            {theme === "light" ? (
-              <Moon className="h-4.5 w-4.5 text-indigo-700" />
-            ) : (
-              <Sun className="h-4.5 w-4.5 text-amber-400" />
-            )}
+            {theme === "light" ? <Moon className="h-4 w-4 text-indigo-700" /> : <Sun className="h-4 w-4 text-amber-400" />}
           </button>
-
-          {/* Language Selector */}
-          <div className="relative flex items-center bg-white/10 dark:bg-white/5 rounded-xl border border-[#5d6fa3]/10 hover:border-[#5d6fa3]/40 transition-all py-1.5 px-2.5 gap-2">
-            <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-300 shrink-0" />
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-transparent text-[10px] font-black uppercase tracking-wider text-inherit border-none outline-none cursor-pointer pr-1"
-              id="select-app-language"
-              title={t("languageSelector")}
-            >
-              {languages.map((lang) => (
-                <option key={lang.code} value={lang.code} className="text-black bg-white dark:bg-[#1e233a] dark:text-white uppercase font-bold text-xs">
-                  {lang.nativeName}
-                </option>
-              ))}
-            </select>
-            {isTranslating && (
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-              </span>
-            )}
-          </div>
-
-          <div className="hidden md:flex flex-col text-right">
-            <span className="text-xs text-indigo-900 dark:text-indigo-100">{t("hello")} <span className="font-bold">{user.name}</span></span>
-            <span className="text-[9px] text-[#5d6fa3] font-mono">{user.email}</span>
-          </div>
-
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-[9px] font-black px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-950/40 text-emerald-400 uppercase tracking-wider">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            {t("secureSession")}
+          <span className="inline-flex items-center gap-1 text-[8px] font-black px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-950/40 text-emerald-400 uppercase tracking-wider">
+            <span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+            {t("online")}
           </span>
-
-          <button
-            onClick={handleLogout}
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-xl text-inherit transition-all cursor-pointer"
-            title={t("logout")}
-            id="btn-logout-header"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
         </div>
       </header>
 
-      {/* Tab Context Sub-Header */}
-      <div className={`${theme === "light" ? "bg-white/60 border-b border-indigo-100" : "bg-[#2c3353]/45 border-b border-[#5d6fa3]/10"} py-2.5 px-6 flex items-center justify-between shrink-0 text-xs transition-colors duration-300`}>
-        <h2 className="font-black text-inherit uppercase tracking-wider" id="header-tab-title">
-          {currentTab === "Dashboard" && t("titleDashboard")}
-          {currentTab === "Profile" && t("titleProfile")}
-          {currentTab === "Vault" && t("titleVault")}
-          {currentTab === "GmailSync" && t("titleGmailSync")}
-          {currentTab === "SafetyCheckIn" && t("titleSafetyCheckIn")}
-          {currentTab === "EmergencyActivation" && t("titleEmergencyActivation")}
-          {currentTab === "ReminderAgent" && t("titleReminderAgent")}
-          {currentTab === "CalendarSync" && t("titleCalendarSync")}
-          {currentTab === "SafetyPanel" && t("titleSafetyPanel")}
-          {currentTab === "NomineeDashboard" && t("titleNomineeDashboard")}
-        </h2>
-        <div className="flex items-center gap-2 font-mono text-[10px] text-[#5d6fa3]">
-          <span>{t("appStatus")}</span>
-          <span className="text-green-500 dark:text-green-400 font-bold">{t("online")}</span>
-        </div>
-      </div>
+      {/* -------------------------------------------------------------
+          3. ANIMATED MOBILE SLIDE-OUT DRAWER MENU (< 1024px)
+          ------------------------------------------------------------- */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden"
+            />
 
-      {/* Main Panel Content Area */}
-      <main className="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto relative overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentTab}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.22, ease: "easeInOut" }}
-          >
-            {currentTab === "Dashboard" && (
-              <LifeGraphDashboard
-                uid={user.uid}
-                onCheckInTriggered={handleCheckInTriggered}
-                checkInTriggerCounter={checkInTriggerCounter}
-                onNavigate={(tabName) => setCurrentTab(tabName as Tab)}
-              />
-            )}
-            {currentTab === "Profile" && <ProfileCenter uid={user.uid} />}
-            {currentTab === "Vault" && <DocumentVault uid={user.uid} />}
-            {currentTab === "GmailSync" && <DataExtractor uid={user.uid} />}
-            {currentTab === "SafetyCheckIn" && (
-              <CheckInSystem
-                uid={user.uid}
-                onCheckInTriggered={handleCheckInTriggered}
-                checkInTriggerCounter={checkInTriggerCounter}
-                onNavigate={(tabName) => setCurrentTab(tabName as any)}
-              />
-            )}
-            {currentTab === "EmergencyActivation" && <EmergencyCenter uid={user.uid} />}
-            {currentTab === "ReminderAgent" && <ReminderAgent uid={user.uid} />}
-            {currentTab === "CalendarSync" && <CalendarSync uid={user.uid} />}
-            {currentTab === "SafetyPanel" && <SafetyPanel uid={user.uid} />}
-            {currentTab === "NomineeDashboard" && (
-              <NomineeDashboard
-                ownerUid={user.uid}
-                ownerName={user.name}
-                nomineePhone={user.nomineePhone || "+1 (555) 019-2834"}
-                onLogout={() => setCurrentTab("Dashboard")}
-                isOwnerPreview={true}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </main>
-
-
-      {/* Redesigned Floating Bottom Navigation Dock */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-5xl bg-[#2c3353]/95 backdrop-blur-md rounded-2xl border border-[#5d6fa3]/30 shadow-2xl px-4 sm:px-6 py-2.5 z-40 flex items-center justify-between gap-1 sm:gap-2">
-        {[
-          { id: "Dashboard", label: t("tabDashboard"), icon: LayoutDashboard },
-          { id: "Profile", label: t("tabProfile"), icon: KeyRound },
-          { id: "Vault", label: t("tabVault"), icon: FolderOpen },
-          { id: "GmailSync", label: t("tabGmailSync"), icon: Mail },
-          { id: "CENTRAL_ACTION", label: "", icon: Plus, isCentral: true },
-          { id: "SafetyPanel", label: t("tabSafetyPanel"), icon: Sliders },
-          { id: "ReminderAgent", label: t("tabReminderAgent"), icon: Bell },
-          { id: "CHAT_TOGGLE", label: "AI Chat", icon: MessageSquare, isChatToggle: true }
-        ].map((item) => {
-          const IconComp = item.icon;
-          
-          if (item.isCentral) {
-            return (
-              <div key={item.id} className="relative flex items-center justify-center px-1">
-                {/* Popover overlay */}
-                {showQuickAccess && (
-                  <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-80 bg-[#1e233a] border border-[#5d6fa3]/40 rounded-xl p-4 shadow-2xl z-50 animate-fade-in space-y-3">
-                    <div className="flex items-center justify-between border-b border-[#5d6fa3]/20 pb-2">
-                      <h4 className="text-[10px] font-black text-[#e0dafc] uppercase tracking-wider">Quick Safety Controls</h4>
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                    </div>
-                    <div className="space-y-1.5">
-                      {[
-                        { tab: "SafetyCheckIn", title: "Proof-of-Life Check-In", desc: "Signal active presence & reset grace timer", color: "text-emerald-400 bg-emerald-950/40 border-emerald-500/20", icon: CheckCircle },
-                        { tab: "EmergencyActivation", title: "Emergency Handover", desc: "Instantly deploy plans and release vaults", color: "text-red-400 bg-red-950/40 border-red-500/20", icon: ShieldAlert },
-                        { tab: "CalendarSync", title: "Calendar Sync", desc: "Import health appointments & timeline tasks", color: "text-blue-400 bg-blue-950/40 border-blue-500/20", icon: Calendar },
-                        { tab: "NomineeDashboard", title: "Nominee Portal View", desc: "Audit live handover visibility", color: "text-indigo-400 bg-indigo-950/40 border-indigo-500/20", icon: Eye }
-                      ].map((act, index) => {
-                        const ActIcon = act.icon;
-                        return (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              setCurrentTab(act.tab as Tab);
-                              setShowQuickAccess(false);
-                            }}
-                            className={`w-full flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all hover:brightness-110 active:scale-[0.99] cursor-pointer ${act.color}`}
-                          >
-                            <ActIcon className="h-4.5 w-4.5 shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-xs font-bold text-white leading-tight">{act.title}</p>
-                              <p className="text-[9px] text-[#e0dafc]/70 leading-normal">{act.desc}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+            {/* Slide-out Panel */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className={`fixed top-0 bottom-0 left-0 w-[300px] max-w-[85vw] z-50 flex flex-col justify-between shadow-2xl border-r lg:hidden ${
+                theme === "light" ? "bg-white border-indigo-100 text-indigo-950" : "bg-[#1e233a] border-[#5d6fa3]/20 text-[#e0dafc]"
+              }`}
+            >
+              {/* Drawer Top Branding & Close Button */}
+              <div className="p-4 flex items-center justify-between border-b border-[#5d6fa3]/10 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 bg-[#e0dafc] rounded-lg flex items-center justify-center text-[#2c3353] border border-indigo-300/30">
+                    <Shield className="h-4 w-4 text-indigo-700" />
                   </div>
-                )}
-
+                  <div>
+                    <h2 className="font-black text-sm text-inherit tracking-tight">{t("brandName")}</h2>
+                    <p className="text-[8px] text-[#5d6fa3] tracking-widest uppercase font-mono">{t("secureSession")}</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setShowQuickAccess(!showQuickAccess)}
-                  className={`w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 hover:scale-105 active:scale-95 transition-all text-white flex items-center justify-center shadow-lg border border-indigo-400/40 relative z-50 cursor-pointer ${showQuickAccess ? "rotate-45" : ""}`}
-                  title="Quick Controls"
-                  id="btn-central-plus"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-inherit cursor-pointer"
+                  aria-label="Close menu"
                 >
-                  <Plus className="h-6 w-6" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            );
-          }
 
-          if (item.isChatToggle) {
-            return (
-              <button
-                key={item.id}
-                onClick={() => setIsChatbotOpen(!isChatbotOpen)}
-                className={`flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                  isChatbotOpen
-                    ? "bg-[#e0dafc] text-[#2c3353] shadow-md font-bold"
-                    : "text-indigo-200/80 hover:bg-white/5 hover:text-white"
-                }`}
-                id="btn-navbar-ai-chat"
-              >
-                <MessageSquare className="h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
-                <span className="text-[10px] hidden sm:inline font-bold">AI Chat</span>
-              </button>
-            );
-          }
+              {/* Drawer Scrollable Navigation Body */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+                
+                {/* General Links */}
+                <div className="space-y-1">
+                  <h3 className="px-3 text-[9px] font-bold text-[#5d6fa3] uppercase tracking-wider mb-2">General Portal</h3>
+                  {[
+                    { id: "Dashboard", label: t("tabDashboard") || "Dashboard", icon: LayoutDashboard },
+                    { id: "Profile", label: t("tabProfile") || "Security Profile", icon: KeyRound },
+                    { id: "Vault", label: t("tabVault") || "Secure Vault", icon: FolderOpen },
+                    { id: "GmailSync", label: t("tabGmailSync") || "Gmail Sync", icon: Mail },
+                    { id: "ReminderAgent", label: t("tabReminderAgent") || "Reminder Agent", icon: Bell },
+                  ].map((item) => {
+                    const IconComp = item.icon;
+                    const isSelected = currentTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setCurrentTab(item.id as Tab);
+                          setIsMobileDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                          isSelected ? "bg-indigo-600 text-white font-bold" : "text-inherit hover:bg-black/5 dark:hover:bg-white/5"
+                        }`}
+                      >
+                        <IconComp className="h-5 w-5 shrink-0" />
+                        <span className="text-xs">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-          const isSelected = currentTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                setCurrentTab(item.id as Tab);
-                setShowQuickAccess(false);
-              }}
-              className={`flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                isSelected
-                  ? "bg-[#e0dafc] text-[#2c3353] shadow-md font-bold"
-                  : "text-indigo-200/80 hover:bg-white/5 hover:text-white"
-              }`}
-              id={`navbar-tab-${item.id}`}
+                {/* Safety Handover & Emergency Links */}
+                <div className="space-y-1">
+                  <h3 className="px-3 text-[9px] font-bold text-[#5d6fa3] uppercase tracking-wider mb-2">Safety & Handover</h3>
+                  {[
+                    { id: "SafetyPanel", label: t("tabSafetyPanel") || "Resilience Settings", icon: Sliders },
+                    { id: "SafetyCheckIn", label: "Proof-of-Life Check-In", icon: CheckCircle },
+                    { id: "EmergencyActivation", label: "Emergency Handover", icon: ShieldAlert },
+                    { id: "NomineeDashboard", label: "Nominee Portal View", icon: Eye },
+                  ].map((item) => {
+                    const IconComp = item.icon;
+                    const isSelected = currentTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setCurrentTab(item.id as Tab);
+                          setIsMobileDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                          isSelected ? "bg-indigo-600 text-white font-bold" : "text-inherit hover:bg-black/5 dark:hover:bg-white/5"
+                        }`}
+                      >
+                        <IconComp className="h-5 w-5 shrink-0" />
+                        <span className="text-xs">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drawer Footer controls */}
+              <div className="p-4 border-t border-[#5d6fa3]/10 space-y-4 shrink-0">
+                {/* Language list */}
+                <div className="flex items-center justify-between gap-2 bg-black/5 dark:bg-white/5 p-2 rounded-xl">
+                  <span className="text-[10px] uppercase font-bold text-[#5d6fa3] flex items-center gap-1">
+                    <Languages className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-300" />
+                    Language
+                  </span>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="bg-transparent text-xs font-bold uppercase text-inherit outline-none cursor-pointer"
+                  >
+                    {languages.map((lang) => (
+                      <option key={lang.code} value={lang.code} className="text-black bg-white dark:bg-[#1e233a] dark:text-white font-bold text-xs">
+                        {lang.nativeName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* User Info & Logout */}
+                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold truncate leading-tight">{user.name}</p>
+                    <p className="text-[10px] text-[#5d6fa3] truncate font-mono mt-0.5">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      handleLogout();
+                    }}
+                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl cursor-pointer transition-colors"
+                    title={t("logout")}
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* -------------------------------------------------------------
+          4. MAIN VIEWPORT CONTAINER
+          ------------------------------------------------------------- */}
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 relative">
+        
+        {/* Tab Context Sub-Header */}
+        <div className={`${theme === "light" ? "bg-white/60 border-b border-indigo-100 text-indigo-950" : "bg-[#2c3353]/45 border-b border-[#5d6fa3]/10 text-[#e0dafc]"} py-3 px-4 sm:px-6 flex items-center justify-between shrink-0 text-xs transition-colors duration-300`}>
+          <h2 className="font-black uppercase tracking-wider" id="header-tab-title">
+            {currentTab === "Dashboard" && (t("titleDashboard") || "Resilience Timeline")}
+            {currentTab === "Profile" && (t("titleProfile") || "Nominee Access Settings")}
+            {currentTab === "Vault" && (t("titleVault") || "Zero-Knowledge Documents")}
+            {currentTab === "GmailSync" && (t("titleGmailSync") || "Email Directives Analyzer")}
+            {currentTab === "SafetyCheckIn" && (t("titleSafetyCheckIn") || "Proof-of-Life Check-In")}
+            {currentTab === "EmergencyActivation" && (t("titleEmergencyActivation") || "Emergency Handover")}
+            {currentTab === "ReminderAgent" && (t("titleReminderAgent") || "Safety Automation Logs")}
+            {currentTab === "SafetyPanel" && (t("titleSafetyPanel") || "Fail-Safe Protocol Panel")}
+            {currentTab === "NomineeDashboard" && (t("titleNomineeDashboard") || "Nominee Handover Portal")}
+          </h2>
+          <div className="flex items-center gap-2 font-mono text-[10px] text-[#5d6fa3]">
+            <span>{t("appStatus")}</span>
+            <span className="text-green-500 dark:text-green-400 font-bold uppercase">{t("online")}</span>
+          </div>
+        </div>
+
+        {/* Core Component Window */}
+        <main className="flex-1 p-3 sm:p-5 md:p-6 w-full max-w-7xl mx-auto relative overflow-hidden pb-24 lg:pb-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTab}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.22, ease: "easeInOut" }}
             >
-              <IconComp className="h-4 sm:h-5 w-4 sm:w-5 shrink-0" />
-              <span className="text-[10px] hidden sm:inline font-bold">{item.label}</span>
-            </button>
-          );
-        })}
+              {currentTab === "Dashboard" && (
+                <LifeGraphDashboard
+                  uid={user.uid}
+                  onCheckInTriggered={handleCheckInTriggered}
+                  checkInTriggerCounter={checkInTriggerCounter}
+                  onNavigate={(tabName) => setCurrentTab(tabName as Tab)}
+                  triggerToast={triggerToast}
+                  justCheckedIn={justCheckedIn}
+                  setJustCheckedIn={setJustCheckedIn}
+                />
+              )}
+              {currentTab === "Profile" && <ProfileCenter uid={user.uid} />}
+              {currentTab === "Vault" && <DocumentVault uid={user.uid} />}
+              {currentTab === "GmailSync" && <DataExtractor uid={user.uid} />}
+              {currentTab === "SafetyCheckIn" && (
+                <CheckInSystem
+                  uid={user.uid}
+                  onCheckInTriggered={handleCheckInTriggered}
+                  checkInTriggerCounter={checkInTriggerCounter}
+                  onNavigate={(tabName) => setCurrentTab(tabName as any)}
+                  triggerToast={triggerToast}
+                  justCheckedIn={justCheckedIn}
+                  setJustCheckedIn={setJustCheckedIn}
+                />
+              )}
+              {currentTab === "EmergencyActivation" && <EmergencyCenter uid={user.uid} />}
+              {currentTab === "ReminderAgent" && <ReminderAgent uid={user.uid} />}
+              {currentTab === "SafetyPanel" && <SafetyPanel uid={user.uid} />}
+              {currentTab === "NomineeDashboard" && (
+                <NomineeDashboard
+                  ownerUid={user.uid}
+                  ownerName={user.name}
+                  nomineePhone={user.nomineePhone || "+1 (555) 019-2834"}
+                  onLogout={() => setCurrentTab("Dashboard")}
+                  isOwnerPreview={true}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* -------------------------------------------------------------
+          5. MOBILE & TABLET COMPACT THUMB-DOCK (< 1024px Only)
+          ------------------------------------------------------------- */}
+      <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] sm:w-[380px] bg-[#2c3353]/95 backdrop-blur-md rounded-2xl border border-[#5d6fa3]/30 shadow-2xl px-4 py-2 z-40 flex items-center justify-between gap-2 animate-fade-in">
+        {/* Mobile Dashboard thumb link */}
+        <button
+          onClick={() => {
+            setCurrentTab("Dashboard");
+            setShowQuickAccess(false);
+          }}
+          className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            currentTab === "Dashboard"
+              ? "bg-[#e0dafc] text-[#2c3353] shadow-md font-extrabold"
+              : "text-indigo-200/80 hover:bg-white/5"
+          }`}
+        >
+          <LayoutDashboard className="h-5 w-5 shrink-0" />
+          <span className="text-[9px] font-bold">Dashboard</span>
+        </button>
+
+        {/* Central Plus safety quick actions button */}
+        <div className="relative flex items-center justify-center px-1">
+          {showQuickAccess && (
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-72 bg-[#1e233a] border border-[#5d6fa3]/40 rounded-xl p-3 shadow-2xl z-50 animate-fade-in space-y-2">
+              <div className="flex items-center justify-between border-b border-[#5d6fa3]/20 pb-1.5">
+                <h4 className="text-[10px] font-black text-[#e0dafc] uppercase tracking-wider">Quick Safety Controls</h4>
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                {[
+                  { tab: "SafetyCheckIn", title: "Proof-of-Life Check-In", desc: "Signal active presence & reset grace timer", color: "text-emerald-400 bg-emerald-950/40 border-emerald-500/20", icon: CheckCircle },
+                  { tab: "EmergencyActivation", title: "Emergency Handover", desc: "Instantly deploy plans and release vaults", color: "text-red-400 bg-red-950/40 border-red-500/20", icon: ShieldAlert },
+                  { tab: "NomineeDashboard", title: "Nominee Portal View", desc: "Audit live handover visibility", color: "text-indigo-400 bg-indigo-950/40 border-indigo-500/20", icon: Eye }
+                ].map((act, index) => {
+                  const ActIcon = act.icon;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentTab(act.tab as Tab);
+                        setShowQuickAccess(false);
+                      }}
+                      className={`w-full flex items-start gap-2 p-1.5 rounded-lg border text-left transition-all hover:brightness-110 active:scale-[0.99] cursor-pointer ${act.color}`}
+                    >
+                      <ActIcon className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[11px] font-bold text-white leading-none">{act.title}</p>
+                        <p className="text-[8px] text-[#e0dafc]/70 leading-normal mt-0.5">{act.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => setShowQuickAccess(!showQuickAccess)}
+            className={`w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 hover:scale-105 active:scale-95 transition-all text-white flex items-center justify-center shadow-lg border border-indigo-400/40 relative z-50 cursor-pointer ${showQuickAccess ? "rotate-45" : ""}`}
+            title="Quick Controls"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Mobile AI Chat toggle button */}
+        <button
+          onClick={() => setIsChatbotOpen(!isChatbotOpen)}
+          className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            isChatbotOpen
+              ? "bg-[#e0dafc] text-[#2c3353] shadow-md font-extrabold"
+              : "text-indigo-200/80 hover:bg-white/5"
+          }`}
+        >
+          <MessageSquare className="h-5 w-5 shrink-0" />
+          <span className="text-[9px] font-bold">AI Chat</span>
+        </button>
       </div>
 
       {/* Global floating context-synced Chatbot */}
@@ -390,6 +684,39 @@ export default function App() {
         externalOpen={isChatbotOpen} 
         onToggle={setIsChatbotOpen} 
       />
+
+      {/* Global Toast Notification */}
+      <AnimatePresence>
+        {toast.message && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className={`fixed bottom-6 right-6 z-[100] max-w-sm w-full bg-slate-900 border ${
+              toast.type === "success" ? "border-emerald-500/30 shadow-emerald-500/10" : "border-rose-500/30 shadow-rose-500/10"
+            } rounded-2xl p-4 shadow-2xl flex items-start gap-3.5 text-white`}
+          >
+            <div className={`p-2 rounded-xl shrink-0 ${
+              toast.type === "success" ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+            }`}>
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-white leading-tight">{toast.message}</h4>
+              {toast.details && (
+                <p className="text-[10px] text-slate-400 leading-normal mt-1">{toast.details}</p>
+              )}
+            </div>
+            <button
+              onClick={() => setToast({ message: "", type: null })}
+              className="text-slate-500 hover:text-slate-300 p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

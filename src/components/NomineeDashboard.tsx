@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import NomineeLockedDashboard from "./NomineeLockedDashboard";
 import { 
   AlertTriangle, 
   ShieldCheck, 
@@ -186,43 +187,14 @@ export default function NomineeDashboard({
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6 text-[#e0dafc]">
         {renderSimulatorToolbar()}
-        
-        <div className="bg-[#2c3353] rounded-2xl border border-dashed border-red-500/20 max-w-xl mx-auto text-center p-10 space-y-6 shadow-xl">
-          <div className="h-16 w-16 bg-[#1e233a] text-red-400 rounded-full flex items-center justify-center mx-auto border border-red-900/30 animate-pulse">
-            <Lock className="h-8 w-8 text-red-400" />
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-lg font-black text-white uppercase tracking-wide">
-              Nominee Handover Portal Locked
-            </h3>
-            <p className="text-xs text-[#5d6fa3] leading-relaxed max-w-md mx-auto">
-              For security, access to {ownerName || "Alex Mercer"}'s confidential files, upcoming bills, and emergency profile is restricted. 
-            </p>
-            <p className="text-xs text-[#5d6fa3] leading-relaxed max-w-md mx-auto">
-              This sandbox vault will automatically unlock only if you activate emergency mode manually, or if you miss your scheduled daily check-in and the grace timer expires.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-[#5d6fa3]/10 flex flex-col sm:flex-row items-center justify-center gap-3">
-            {isOwnerPreview ? (
-              <button
-                onClick={() => setSimulationMode("active_missed")}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 px-5 rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-md"
-              >
-                <Unlock className="h-4 w-4" />
-                Simulate Missed Check-In Unlock
-              </button>
-            ) : (
-              <button
-                onClick={onLogout}
-                className="bg-[#e0dafc] hover:brightness-110 text-[#2c3353] font-black text-xs py-2.5 px-5 rounded-xl shadow-md transition-all cursor-pointer"
-              >
-                Return to Login Gateway
-              </button>
-            )}
-          </div>
-        </div>
+        <NomineeLockedDashboard
+          ownerUid={ownerUid}
+          ownerName={ownerName}
+          nomineePhone={nomineePhone}
+          onLogout={onLogout}
+          isOwnerPreview={isOwnerPreview}
+          onSimulateUnlock={() => setSimulationMode("active_missed")}
+        />
       </div>
     );
   }
