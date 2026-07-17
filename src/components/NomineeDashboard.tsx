@@ -64,12 +64,14 @@ export default function NomineeDashboard({
       // 3. Fetch secured documents
       const dRes = await apiFetch(`/api/documents/${ownerUid}`);
       const dData = await dRes.json();
-      const filteredDocs = dData?.filter((d: any) => d.isNomineeAccessSecured === true) || [];
+      const filteredDocs = Array.isArray(dData)
+        ? dData.filter((d: any) => d.isNomineeAccessSecured === true)
+        : [];
       setSecuredDocs(filteredDocs);
 
       // 4. Set state according to simulation mode
-      if (simulationMode === "database") {
-        setIsActive(statusData.active);
+      if (simulationMode === "database" && statusData) {
+        setIsActive(!!statusData.active);
         setPlan(statusData.plan || null);
         setAiBrief(statusData.plan?.aiSummary || "Review the priority task list below to coordinate upcoming medical, insurance, and financial actions.");
       } else if (simulationMode === "locked") {
@@ -435,7 +437,7 @@ export default function NomineeDashboard({
           </div>
 
           <div className="space-y-3">
-            {!plan?.pendingBills || plan.pendingBills.length === 0 ? (
+            {!Array.isArray(plan?.pendingBills) || plan.pendingBills.length === 0 ? (
               <div className="text-center py-8 text-[#5d6fa3] text-xs italic">
                 No approaching liabilities or pending EMIs on schedule.
               </div>

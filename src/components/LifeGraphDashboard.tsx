@@ -97,8 +97,8 @@ export default function LifeGraphDashboard({
       const res = await apiFetch(`/api/life-graph/${uid}`);
       const data = await res.json();
       if (data) {
-        setBills(data.bills || []);
-        setAppointments(data.appointments || []);
+        setBills(Array.isArray(data.bills) ? data.bills : []);
+        setAppointments(Array.isArray(data.appointments) ? data.appointments : []);
         setStats(data.checkInStats || null);
       }
     } catch (e) {

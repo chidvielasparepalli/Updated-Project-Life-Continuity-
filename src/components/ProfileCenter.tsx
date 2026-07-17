@@ -59,11 +59,11 @@ export default function ProfileCenter({ uid, onProfileUpdated }: ProfileCenterPr
     try {
       const sRes = await apiFetch(`/api/security/sessions/${uid}`);
       const sData = await sRes.json();
-      setSessions(sData || []);
+      setSessions(Array.isArray(sData) ? sData : []);
 
       const aRes = await apiFetch(`/api/security/alerts/${uid}`);
       const aData = await aRes.json();
-      setAlerts(aData || []);
+      setAlerts(Array.isArray(aData) ? aData : []);
     } catch (e) {
       console.error("Failed to load security assets", e);
     }

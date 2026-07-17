@@ -59,12 +59,12 @@ export default function CheckInSystem({
       // Get history
       const histRes = await apiFetch(`/api/checkin/history/${uid}`);
       const histData = await histRes.json();
-      setHistory(histData || []);
+      setHistory(Array.isArray(histData) ? histData : []);
 
       // Get events list
       const evtsRes = await apiFetch(`/api/checkin/events/${uid}`);
       const evtsData = await evtsRes.json();
-      setEvents(evtsData || []);
+      setEvents(Array.isArray(evtsData) ? evtsData : []);
     } catch (e) {
       console.error(e);
     }

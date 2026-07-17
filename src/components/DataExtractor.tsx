@@ -63,7 +63,7 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
 
       const rRes = await apiFetch(`/api/gmail/records/${uid}`);
       const rData = await rRes.json();
-      setEmailRecords(rData || []);
+      setEmailRecords(Array.isArray(rData) ? rData : []);
     } catch (e) {
       console.error(e);
     }
