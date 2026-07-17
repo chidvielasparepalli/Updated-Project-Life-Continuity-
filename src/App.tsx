@@ -58,6 +58,7 @@ export default function App() {
   const { theme, toggleTheme, language, setLanguage, t, languages, isTranslating } = useThemeLanguage();
   const [user, setUser] = useState<any | null>(null);
   const [role, setRole] = useState<"user" | "nominee" | null>(null);
+  const [syncTimeoutReached, setSyncTimeoutReached] = useState(false);
 
   // Clerk authentication
   const { isSignedIn, user: clerkUser, isLoaded: isClerkLoaded } = useUser();
@@ -115,6 +116,34 @@ export default function App() {
       setRole(null);
     }
   }, [isClerkLoaded, isSignedIn, clerkUser, user, role]);
+
+  // Clerk sync timeout fail-safe: bypass loader if stuck for over 4 seconds
+  useEffect(() => {
+    if (isSignedIn && !role) {
+      const timer = setTimeout(() => {
+        setSyncTimeoutReached(true);
+      }, 4000);
+      return () => clearTimeout(timer);
+    } else {
+      setSyncTimeoutReached(false);
+    }
+  }, [isSignedIn, role]);
+
+  useEffect(() => {
+    if (isSignedIn && !role && syncTimeoutReached) {
+      console.warn("Clerk sync connection timed out. Logging in locally...");
+      const email = clerkUser?.primaryEmailAddress?.emailAddress || "user@clerk.com";
+      const name = clerkUser?.fullName || clerkUser?.username || email.split("@")[0] || "Clerk User";
+      const uid = clerkUser?.id || `user-clerk-${Date.now()}`;
+      setUser({
+        uid,
+        email,
+        name,
+        createdAt: new Date().toISOString()
+      });
+      setRole("user");
+    }
+  }, [isSignedIn, role, syncTimeoutReached, clerkUser]);
 
   // Shared check-in state
   const [justCheckedIn, setJustCheckedIn] = useState(false);
