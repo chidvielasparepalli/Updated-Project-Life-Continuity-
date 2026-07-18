@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mail, RefreshCw, Sliders, Sparkles, FolderSync, ExternalLink, ShieldCheck } from "lucide-react";
+import { Mail, RefreshCw, Sliders, Sparkles, FolderSync, ExternalLink, ShieldCheck, Trash2 } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
 interface DataExtractorProps {
@@ -35,7 +35,7 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
       const res = await apiFetch("/api/composio/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid })
+        body: JSON.stringify({ uid, callbackUrl: window.location.origin })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -160,6 +160,27 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
     }
     const url = getGmailUrl(record);
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleDeleteEmail = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this extracted email?")) {
+      return;
+    }
+    try {
+      const res = await apiFetch(`/api/gmail/records/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        fetchSettingsAndRecords();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to delete email record.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to delete email record.");
+    }
   };
 
   return (
@@ -344,9 +365,18 @@ export default function DataExtractor({ uid }: DataExtractorProps) {
                       </a>
                       <p className="text-[10px] text-[#5d6fa3] mt-0.5">Sender: {rec.sender} • {new Date(rec.date).toLocaleDateString()}</p>
                     </div>
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${getCategoryColor(rec.category)} shrink-0`}>
-                      {rec.category}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${getCategoryColor(rec.category)}`}>
+                        {rec.category}
+                      </span>
+                      <button
+                        onClick={(e) => handleDeleteEmail(e, rec.id)}
+                        className="p-1.5 text-[#5d6fa3] hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-all cursor-pointer"
+                        title="Delete extracted email record"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="bg-[#2c3353] p-3 rounded-lg border border-[#5d6fa3]/15">

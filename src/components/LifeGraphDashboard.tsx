@@ -43,6 +43,8 @@ export default function LifeGraphDashboard({
   // Core database states
   const [bills, setBills] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [gmailRecords, setGmailRecords] = useState<any[]>([]);
+  const [extractions, setExtractions] = useState<any[]>([]);
   const [stats, setStats] = useState<CheckInStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -99,6 +101,8 @@ export default function LifeGraphDashboard({
       if (data) {
         setBills(Array.isArray(data.bills) ? data.bills : []);
         setAppointments(Array.isArray(data.appointments) ? data.appointments : []);
+        setGmailRecords(Array.isArray(data.gmailRecords) ? data.gmailRecords : []);
+        setExtractions(Array.isArray(data.extractions) ? data.extractions : []);
         setStats(data.checkInStats || null);
       }
     } catch (e) {
@@ -371,50 +375,186 @@ export default function LifeGraphDashboard({
       }
     }
   }, [bills, appointments]);
-
   // Helper mapping helper to produce standard UnifiedEvents
   const getUnifiedEvents = (): UnifiedEvent[] => {
     const list: UnifiedEvent[] = [];
 
+    const monthsMap: { [key: string]: number } = {
+      jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3,
+      apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7,
+      aug: 8, august: 8, sep: 9, september: 9, oct: 10, october: 10,
+      nov: 11, november: 11, dec: 12, december: 12
+    };
+
+    const extractDate = (text: string | undefined | null): string | null => {
+      if (!text) return null;
+      
+      // 1. Check YYYY-MM-DD
+      const ymd = text.match(/\b(\d{4})[-/](\d{2})[-/](\d{2})\b/);
+      if (ymd) {
+        return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+      }
+
+      // 2. Check Month Day, Year or Month Day (e.g. July 22nd, 2026 or July 22nd)
+      const monthNames = "(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)";
+      const regexMonthDay = new RegExp(`\\b${monthNames}\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b`, "i");
+      const mdMatch = text.match(regexMonthDay);
+      if (mdMatch) {
+        const monthName = mdMatch[1].toLowerCase();
+        const month = String(monthsMap[monthName] || 7).padStart(2, "0");
+        const day = String(mdMatch[2]).padStart(2, "0");
+        const year = mdMatch[3] || "2026"; // Fallback to current mock year
+        return `${year}-${month}-${day}`;
+      }
+
+      // 3. Check Day Month Year or Day Month (e.g. 22nd July 2026 or 22 July)
+      const regexDayMonth = new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+${monthNames}(?:\\s+(\\d{4}))?\\b`, "i");
+      const dmMatch = text.match(regexDayMonth);
+      if (dmMatch) {
+        const monthName = dmMatch[2].toLowerCase();
+        const month = String(monthsMap[monthName] || 7).padStart(2, "0");
+        const day = String(dmMatch[1]).padStart(2, "0");
+        const year = dmMatch[3] || "2026";
+        return `${year}-${month}-${day}`;
+      }
+
+      return null;
+    };
+
+    const calculatePriorityAndDate = (
+      itemDateStr: string | undefined | null,
+      textToScan: string
+    ): { priority: "Critical" | "High" | "Medium" | "Low"; targetDateStr: string } => {
+      let targetDateStr = extractDate(textToScan);
+      
+      if (!targetDateStr && itemDateStr) {
+        targetDateStr = extractDate(itemDateStr);
+        if (!targetDateStr) {
+          targetDateStr = itemDateStr.substring(0, 10);
+        }
+      }
+
+      if (!targetDateStr) {
+        return { priority: "Low", targetDateStr: new Date().toISOString().substring(0, 10) };
+      }
+
+      const dateOnlyMatch = targetDateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!dateOnlyMatch) {
+        return { priority: "Low", targetDateStr };
+      }
+
+      const target = new Date(
+        Number(dateOnlyMatch[1]),
+        Number(dateOnlyMatch[2]) - 1,
+        Number(dateOnlyMatch[3])
+      );
+      target.setHours(0, 0, 0, 0);
+
+      const current = new Date();
+      current.setHours(0, 0, 0, 0);
+
+      const diffTime = target.getTime() - current.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      let priority: "Critical" | "High" | "Medium" | "Low" = "Low";
+      if (diffDays <= 0) {
+        priority = "Critical";
+      } else if (diffDays <= 3) {
+        priority = "High";
+      } else if (diffDays <= 7) {
+        priority = "Medium";
+      } else {
+        priority = "Low";
+      }
+
+      return { priority, targetDateStr };
+    };
+
     bills.forEach((b) => {
-      let category: "Medical Consults" | "Financial / EMI" | "Family & School" = "Financial / EMI";
+      let category = "Financial / EMI";
       if (b.category === "School Fees") {
         category = "Family & School";
       }
+      
+      const { priority, targetDateStr } = calculatePriorityAndDate(b.dueDate, `${b.name} ${b.notes || ""}`);
       
       list.push({
         id: b.id,
         type: "bill",
         name: b.name,
-        date: b.dueDate,
+        date: targetDateStr,
         amount: b.amount,
         status: b.status,
         category,
-        priority: b.priority || (b.category === "Loans/EMIs" ? "High" : "Medium"),
+        priority,
         notes: b.notes || ""
       });
     });
 
     appointments.forEach((a) => {
-      let category: "Medical Consults" | "Financial / EMI" | "Family & School" = "Medical Consults";
-      
+      let category = "Medical Consults";
       if (a.category) {
         category = a.category;
       } else if (a.name.toLowerCase().includes("school") || a.notes?.toLowerCase().includes("school") || a.notes?.toLowerCase().includes("kids")) {
         category = "Family & School";
       }
 
+      const { priority, targetDateStr } = calculatePriorityAndDate(a.date, `${a.name} ${a.notes || ""}`);
+
       list.push({
         id: a.id,
         type: "appointment",
         name: a.name,
-        date: a.date,
+        date: targetDateStr,
         time: a.time,
         status: a.status,
         category,
-        priority: a.priority || "Medium",
+        priority,
         location: a.location,
         notes: a.notes
+      });
+    });
+
+    gmailRecords.forEach((g) => {
+      const textToScan = `${g.subject} ${g.extractedSummary} ${g.rawSnippet || ""}`;
+      const { priority, targetDateStr } = calculatePriorityAndDate(g.date, textToScan);
+      
+      let category = "Gmail Extracted";
+      if (g.category === "Bills") category = "Financial / EMI";
+      else if (g.category === "Appointments") category = "Medical Consults";
+      else if (g.category === "Healthcare") category = "Medical Consults";
+      else if (g.category === "Travel") category = "Travel & Bookings";
+
+      list.push({
+        id: g.id,
+        type: "gmail",
+        name: g.subject,
+        date: targetDateStr,
+        status: "Gmail Synced",
+        category,
+        priority,
+        notes: g.extractedSummary,
+        location: g.sender ? `From: ${g.sender}` : undefined
+      });
+    });
+
+    extractions.forEach((x) => {
+      const textToScan = `${x.documentTitle || ""} ${x.coverage || ""} ${x.nominee || ""} ${x.hospitalName || ""} expiry:${x.expiryDate || ""}`;
+      const { priority, targetDateStr } = calculatePriorityAndDate(x.expiryDate !== "N/A (Perpetual)" && x.expiryDate !== "N/A" ? x.expiryDate : x.uploadedDate, textToScan);
+
+      let category = "Vault Document";
+      if (x.documentType === "Insurance Policies") category = "Financial / EMI";
+      else if (x.documentType === "Will & Testament") category = "Family & School";
+
+      list.push({
+        id: x.id || `ext-${x.documentId}`,
+        type: "document",
+        name: x.documentTitle || "Vault Document",
+        date: targetDateStr,
+        status: "Document Verified",
+        category,
+        priority,
+        notes: `Policy Number: ${x.policyNumber || "N/A"}\nCoverage: ${x.coverage || "N/A"}\nNominee: ${x.nominee || "N/A"}\nHospital/Issuer: ${x.hospitalName || "N/A"}`
       });
     });
 
@@ -648,19 +788,24 @@ export default function LifeGraphDashboard({
             <div className="grid grid-cols-7 gap-2">
               {calendarDaysList.map((dayObj, index) => {
                 const dayEvents = unifiedEvents.filter(e => e.date === dayObj.dateStr);
-                const hasFinancial = dayEvents.some(e => e.category === "Financial / EMI");
-                const hasMedical = dayEvents.some(e => e.category === "Medical Consults");
-                const hasFamily = dayEvents.some(e => e.category === "Family & School");
                 
-                // Determine category overlap
-                let categoryTypesCount = 0;
-                if (hasFinancial) categoryTypesCount++;
-                if (hasMedical) categoryTypesCount++;
-                if (hasFamily) categoryTypesCount++;
-
+                // Find highest priority on this day
+                let highestPriority: "Critical" | "High" | "Medium" | "Low" | null = null;
+                if (dayEvents.length > 0) {
+                  if (dayEvents.some(e => e.priority === "Critical")) {
+                    highestPriority = "Critical";
+                  } else if (dayEvents.some(e => e.priority === "High")) {
+                    highestPriority = "High";
+                  } else if (dayEvents.some(e => e.priority === "Medium")) {
+                    highestPriority = "Medium";
+                  } else {
+                    highestPriority = "Low";
+                  }
+                }
+                
                 const isSelected = selectedDayStr === dayObj.dateStr;
 
-                // Color code backgrounds
+                // Color code backgrounds based on highest priority
                 let bgClass = "bg-[#2c3353]/30 text-indigo-200/50";
                 let ringClass = "border border-[#5d6fa3]/10 hover:border-[#5d6fa3]/40";
                 
@@ -669,14 +814,14 @@ export default function LifeGraphDashboard({
                   ringClass = "border border-[#5d6fa3]/20 hover:border-indigo-400/50";
 
                   if (dayEvents.length > 0) {
-                    if (categoryTypesCount > 1) {
-                      bgClass = "bg-[#4f46e5]/45 text-indigo-100 hover:bg-[#4f46e5]/60";
-                    } else if (hasMedical) {
-                      bgClass = "bg-rose-950/60 text-rose-200 hover:bg-rose-950/80 border-rose-500/20";
-                    } else if (hasFinancial) {
-                      bgClass = "bg-blue-950/60 text-blue-200 hover:bg-blue-950/80 border-blue-500/20";
-                    } else if (hasFamily) {
-                      bgClass = "bg-purple-950/60 text-purple-200 hover:bg-purple-950/80 border-purple-500/20";
+                    if (highestPriority === "Critical") {
+                      bgClass = "bg-red-950/65 text-red-200 hover:bg-red-950/80 border-red-500/20";
+                    } else if (highestPriority === "High") {
+                      bgClass = "bg-orange-950/65 text-orange-200 hover:bg-orange-950/80 border-orange-500/20";
+                    } else if (highestPriority === "Medium") {
+                      bgClass = "bg-yellow-950/60 text-yellow-200 hover:bg-yellow-950/85 border-yellow-500/20";
+                    } else if (highestPriority === "Low") {
+                      bgClass = "bg-green-950/65 text-green-200 hover:bg-green-950/80 border-green-500/20";
                     }
                   }
                 }
@@ -705,14 +850,36 @@ export default function LifeGraphDashboard({
                     
                     {dayEvents.length > 0 && (
                       <div className="flex items-center gap-0.5 mt-0.5 justify-center w-full">
-                        {hasMedical && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" title="Medical" />}
-                        {hasFinancial && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" title="Financial" />}
-                        {hasFamily && <span className="h-1.5 w-1.5 rounded-full bg-purple-500" title="Family & School" />}
+                        {dayEvents.some(e => e.priority === "Critical") && <span className="h-1.5 w-1.5 rounded-full bg-red-500" title="Critical Priority" />}
+                        {dayEvents.some(e => e.priority === "High") && <span className="h-1.5 w-1.5 rounded-full bg-orange-500" title="High Priority" />}
+                        {dayEvents.some(e => e.priority === "Medium") && <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" title="Medium Priority" />}
+                        {dayEvents.some(e => e.priority === "Low") && <span className="h-1.5 w-1.5 rounded-full bg-green-500" title="Low Priority" />}
                       </div>
                     )}
                   </button>
                 );
               })}
+            </div>
+
+            {/* Priority Urgency Legend */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] font-bold text-[#5d6fa3] border-t border-[#5d6fa3]/10 pt-3 mt-1">
+              <span className="text-[10px] font-black uppercase text-[#e0dafc]/50 tracking-wider">Urgency Index:</span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                Critical (Today / Overdue)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                High (Within 3 days)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+                Medium (Within 7 days)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                Low (Later)
+              </span>
             </div>
           </div>
         </div>

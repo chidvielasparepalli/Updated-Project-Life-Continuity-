@@ -27,6 +27,7 @@ const app = express();
 
 const allowedOrigins = [
   "https://life-continuity-ai-take-over.vercel.app",
+  "https://life-continuiy-ai-take-over.vercel.app",
   "http://localhost:3000"
 ];
 
@@ -1225,7 +1226,7 @@ app.put("/api/gmail/settings/:uid", async (req, res) => {
 
 app.post("/api/composio/link", async (req, res) => {
   console.log(`[COMPOSIO LINK] Incoming request body:`, JSON.stringify(req.body));
-  const { uid } = req.body;
+  const { uid, callbackUrl } = req.body;
   if (!uid) {
     console.warn("[COMPOSIO LINK] Missing uid in request body");
     return res.status(400).json({ error: "uid required" });
@@ -1247,8 +1248,8 @@ app.post("/api/composio/link", async (req, res) => {
   }
 
   try {
-    console.log(`[COMPOSIO LINK] Calling client.connectedAccounts.link(uid="${uid}", authConfigId="${authConfigId}")`);
-    const connectionRequest = await client.connectedAccounts.link(uid, authConfigId);
+    console.log(`[COMPOSIO LINK] Calling client.connectedAccounts.link(uid="${uid}", authConfigId="${authConfigId}", callbackUrl="${callbackUrl}")`);
+    const connectionRequest = await client.connectedAccounts.link(uid, authConfigId, callbackUrl ? { callbackUrl } : undefined);
     console.log(`[COMPOSIO LINK] Success! redirectUrl=${connectionRequest.redirectUrl}`);
     res.json({ success: true, redirectUrl: connectionRequest.redirectUrl });
   } catch (err: any) {
@@ -1354,6 +1355,16 @@ app.get("/api/gmail/records/:uid", async (req, res) => {
   }
 });
 
+app.delete("/api/gmail/records/:id", async (req, res) => {
+  try {
+    await gmailService.deleteRecord(req.params.id);
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error("Delete email record failed", err);
+    res.status(500).json({ error: "Failed to delete email record" });
+  }
+});
+
 // Tab 5: Personal Life Graph / Bills & Appointments
 // Tab 5: Personal Life Graph / Bills & Appointments
 app.get("/api/life-graph/:uid", async (req, res) => {
@@ -1361,10 +1372,32 @@ app.get("/api/life-graph/:uid", async (req, res) => {
   try {
     const data = await settingsService.getLifeGraphData(uid);
     const stats = await checkInService.getStats(uid);
+
+    // Fetch Gmail sync records
+    const gmailRecords = await gmailService.getRecords(uid);
+
+    // Fetch Document Vault documents & extractions
+    const docs = await documentsService.getDocumentsByUid(uid);
+    const extractions = [];
+    for (const doc of docs) {
+      const ext = await documentsService.getExtraction(doc.id);
+      if (ext) {
+        extractions.push({
+          ...ext,
+          documentTitle: doc.fileName,
+          documentType: doc.documentType,
+          uploadedDate: doc.uploadedDate
+        });
+      }
+    }
+
     res.json({
       bills: data.bills,
       appointments: data.appointments,
-      checkInStats: stats || null
+      checkInStats: stats || null,
+      gmailRecords: gmailRecords || [],
+      documents: docs || [],
+      extractions: extractions || []
     });
   } catch (err: any) {
     console.error("Get life graph failed", err);

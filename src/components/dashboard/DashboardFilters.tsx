@@ -54,6 +54,7 @@ export default function DashboardFilters({
             className="bg-transparent text-xs text-[#e0dafc] focus:outline-none cursor-pointer border-none py-1.5 pr-2"
           >
             <option value="All Priorities">All Priorities</option>
+            <option value="Critical">Critical</option>
             <option value="High">High</option>
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>

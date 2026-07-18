@@ -10,7 +10,7 @@ const client = new Composio({ apiKey });
 async function run() {
   try {
     console.log("Calling composio.connectedAccounts.link...");
-    const connectionRequest = await client.connectedAccounts.link("sandbox-demo", "gmail");
+    const connectionRequest = await client.connectedAccounts.link("sandbox-demo", process.env.COMPOSIO_GMAIL_AUTH_CONFIG_ID);
     console.log("Success! Redirect URL is:", connectionRequest.redirectUrl);
   } catch (err) {
     console.error("Caught error:", err);

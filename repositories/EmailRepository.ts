@@ -5,6 +5,7 @@ export interface IEmailRepository {
   getRecordsByUid(uid: string): Promise<any[]>;
   getSettings(uid: string): Promise<any>;
   updateSettings(uid: string, targetKeywords: string): Promise<any>;
+  deleteRecord(id: string): Promise<void>;
 }
 
 export class JSONEmailRepository implements IEmailRepository {
@@ -33,5 +34,11 @@ export class JSONEmailRepository implements IEmailRepository {
     db.checkInSettings[uid].targetKeywords = targetKeywords || "";
     saveDb(db);
     return db.checkInSettings[uid];
+  }
+
+  async deleteRecord(id: string): Promise<void> {
+    const db = loadDb();
+    db.emailRecords = db.emailRecords.filter((r: any) => r.id !== id);
+    saveDb(db);
   }
 }

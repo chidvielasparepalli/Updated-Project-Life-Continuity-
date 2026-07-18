@@ -14,8 +14,8 @@ interface DrillDownPanelProps {
   setEditTime: (val: string) => void;
   editCategory: string;
   setEditCategory: (val: "Medical Consults" | "Financial / EMI" | "Family & School") => void;
-  editPriority: "High" | "Medium" | "Low";
-  setEditPriority: (val: "High" | "Medium" | "Low") => void;
+  editPriority: "Critical" | "High" | "Medium" | "Low";
+  setEditPriority: (val: "Critical" | "High" | "Medium" | "Low") => void;
   editAmount: string;
   setEditAmount: (val: string) => void;
   editStatus: string;
@@ -83,15 +83,32 @@ export default function DrillDownPanel({
     categoryColor = "border-blue-500";
     categoryTagText = "FINANCIAL";
     categoryTagStyle = "bg-blue-950/40 text-blue-400 border-blue-900/50";
+  } else if (currentEvent.type === "gmail") {
+    categoryColor = "border-indigo-500";
+    categoryTagText = "GMAIL";
+    categoryTagStyle = "bg-indigo-950/40 text-indigo-400 border-indigo-900/50";
+  } else if (currentEvent.type === "document") {
+    categoryColor = "border-emerald-500";
+    categoryTagText = "VAULT";
+    categoryTagStyle = "bg-emerald-950/40 text-emerald-400 border-emerald-900/50";
   }
 
   // Severity Level
   let severityText = `${currentEvent.priority || "Medium"} Severity`;
   let severityTagStyle = "bg-slate-800 text-slate-300 border-slate-700";
-  if (currentEvent.priority === "High") {
+  let severityCardStyle = "bg-slate-100 text-slate-600 border-slate-200";
+  if (currentEvent.priority === "Critical") {
     severityTagStyle = "bg-red-950/40 text-red-400 border-red-900/50";
+    severityCardStyle = "bg-red-50 text-red-600 border-red-200";
+  } else if (currentEvent.priority === "High") {
+    severityTagStyle = "bg-orange-950/40 text-orange-400 border-orange-900/50";
+    severityCardStyle = "bg-orange-50 text-orange-600 border-orange-200";
+  } else if (currentEvent.priority === "Medium") {
+    severityTagStyle = "bg-yellow-950/40 text-yellow-400 border-yellow-900/50";
+    severityCardStyle = "bg-yellow-50 text-yellow-600 border-yellow-200";
   } else if (currentEvent.priority === "Low") {
     severityTagStyle = "bg-green-950/40 text-green-400 border-green-900/50";
+    severityCardStyle = "bg-green-50 text-green-600 border-green-200";
   }
 
   return (
@@ -122,10 +139,10 @@ export default function DrillDownPanel({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border ${categoryTagStyle.replace("bg-purple-950/40", "bg-purple-50").replace("bg-red-950/40", "bg-red-50").replace("bg-blue-950/40", "bg-blue-50").replace("bg-indigo-950/40", "bg-indigo-50")}`}>
+              <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border ${categoryTagStyle.replace("bg-purple-950/40", "bg-purple-50").replace("bg-red-950/40", "bg-red-50").replace("bg-blue-950/40", "bg-blue-50").replace("bg-indigo-950/40", "bg-indigo-50").replace("bg-emerald-950/40", "bg-emerald-50")}`}>
                 {categoryTagText}
               </span>
-              <span className={`text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded border ${severityTagStyle.replace("bg-slate-800", "bg-slate-100").replace("bg-red-950/40", "bg-red-50").replace("bg-green-950/40", "bg-green-50")}`}>
+              <span className={`text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded border ${severityCardStyle}`}>
                 {severityText}
               </span>
             </div>
@@ -163,14 +180,16 @@ export default function DrillDownPanel({
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setIsConfiguring(!isConfiguring);
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer self-stretch sm:self-center"
-            >
-              Configure Event Action &gt;
-            </button>
+            {(currentEvent.type === "bill" || currentEvent.type === "appointment") && (
+              <button
+                onClick={() => {
+                  setIsConfiguring(!isConfiguring);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer self-stretch sm:self-center"
+              >
+                Configure Event Action &gt;
+              </button>
+            )}
           </div>
 
           {/* Inline Expandable Configuration Tray */}
@@ -238,6 +257,7 @@ export default function DrillDownPanel({
                     onChange={(e) => setEditPriority(e.target.value as any)}
                     className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
+                    <option value="Critical">Critical</option>
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
                     <option value="Low">Low</option>

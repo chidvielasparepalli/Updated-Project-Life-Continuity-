@@ -15,6 +15,10 @@ export class GmailService {
     return this.emailRepository.getRecordsByUid(uid);
   }
 
+  async deleteRecord(id: string) {
+    return this.emailRepository.deleteRecord(id);
+  }
+
   async syncEmails(
     uid: string,
     composio: any,
@@ -65,7 +69,7 @@ export class GmailService {
 
       let subject = email.subject || email.title || email.messageSubject || "No Subject";
       let sender = email.from || email.sender || email.senderAddress || email.messageSender || "Unknown Sender";
-      let dateStr = email.date || email.dateTime || email.receivedAt || email.messageDate || new Date().toISOString();
+      let dateStr = email.date || email.dateTime || email.receivedAt || email.messageDate || email.messageTimestamp || new Date().toISOString();
 
       const headers = email.payload?.headers || email.headers;
       if (Array.isArray(headers)) {

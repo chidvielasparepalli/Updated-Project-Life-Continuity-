@@ -82,6 +82,118 @@
   },
   "securityAlerts": [
     {
+      "id": "alert-pzhxiqwg2",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T04:00:02.095Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-0w07q9uvw",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:39:15.877Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-zgujvhwzx",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:38:35.131Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-6fld9zqmd",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:38:26.208Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-jdfglqp6n",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:38:17.352Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-n0e4qezuc",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:35:54.536Z",
+      "event": "Calendar Synced",
+      "details": "Pulled 0 new critical agenda schedules from Google Calendar."
+    },
+    {
+      "id": "alert-7zpa61xfn",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:35:52.787Z",
+      "event": "Calendar Synced",
+      "details": "Pulled 2 new critical agenda schedules from Google Calendar."
+    },
+    {
+      "id": "alert-tg9c2a51w",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:35:10.640Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-wvp9g1xjn",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:35:08.029Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-t0bdfk8x5",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:31:24.587Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-600elawlr",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:29:14.182Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-9szmxssau",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:29:09.096Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-cqww7qmz5",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:29:04.548Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-t0pnuet08",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:29:00.183Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-m372p0gh4",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:28:22.674Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-ln40jsjx7",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:28:22.653Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
       "id": "alert-m6bwp1753",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "timestamp": "2026-07-17T22:48:59.175Z",
@@ -1590,90 +1702,90 @@
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19c113c725c8a830"
     },
     {
-      "id": "email-hc2ilkidl",
+      "id": "email-4cl1tufrq",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "emi",
       "sender": "Ruthvika NIAT Hyderabad <ruthvikaniathyderabad@gmail.com>",
       "category": "Bills",
       "date": "2026-07-17T18:53:55.000Z",
-      "extractedSummary": "Make the pending EMI payment which is currently overdue.",
+      "extractedSummary": "Billing notification: emi.",
       "rawSnippet": "Emi is pending\r\n",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f716dd0a199d72"
     },
     {
-      "id": "email-lfsq8i8za",
+      "id": "email-p56y2zwyr",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "Get Mac or iPad for college with No Cost EMI for a limited time.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2026-02-02T01:33:18.000Z",
-      "extractedSummary": "Take advantage of the No Cost EMI offer on select Mac and iPad models at the Apple Education Store between January 15, 2026, and February 23, 2026.",
+      "extractedSummary": "Billing notification: Get Mac or iPad for college with No Cost EMI for a limited time..",
       "rawSnippet": "Save more for college with education pricing. ͏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19c1bfbb338e28ef"
     },
     {
-      "id": "email-fbxthvn7z",
+      "id": "email-embt3vrqa",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "💘 Get set for Valentine’s Day.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2026-01-30T02:59:36.000Z",
-      "extractedSummary": "Shop for Valentine’s Day gifts at Apple with free engraving and monthly payment options.",
+      "extractedSummary": "Billing notification: 💘 Get set for Valentine’s Day..",
       "rawSnippet": "Find something special for your special someone at Apple. ͏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19c0cd7cd5e506e8"
     },
     {
-      "id": "email-u5va2maqo",
+      "id": "email-jmtfg61xp",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "🤩 Shop for what you’ve wanted all season.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2026-01-02T07:39:43.000Z",
-      "extractedSummary": "Purchase new Apple products using No Cost EMI and Apple Trade In savings.",
+      "extractedSummary": "Billing notification: 🤩 Shop for what you’ve wanted all season..",
       "rawSnippet": "iPhone 17 Pro. AirPods Pro 3. MacBook Pro 14″ with M5. Treat yourself to the latest from Apple. ͏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19b7da5f05a7c929"
     },
     {
-      "id": "email-4k3es6vst",
+      "id": "email-7js4n2aus",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "Introducing the new iPad Pro with M5 chip.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2025-10-23T02:44:00.000Z",
-      "extractedSummary": "Buy the new iPad Pro with the M5 chip starting at ₹99900.00 or from ₹7992.00 per month.",
+      "extractedSummary": "Billing notification: Introducing the new iPad Pro with M5 chip..",
       "rawSnippet": "A giant leap for AI on iPad. Powerfully redesigned iPadOS. Game-changing capabilities everywhere. ͏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19a0ef3a7033191d"
     },
     {
-      "id": "email-1pwj2xwr5",
+      "id": "email-gjli5s5d0",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "Introducing the new 14″ MacBook Pro. Supercharged by M5.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2025-10-22T07:38:55.000Z",
-      "extractedSummary": "Pre-order or purchase the new 14-inch MacBook Pro starting at ₹13325.00 per month.",
+      "extractedSummary": "Billing notification: Introducing the new 14″ MacBook Pro. Supercharged by M5..",
       "rawSnippet": "Optimised for AI from the silicon up. ͏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/19a0adb52d612d7c"
     },
     {
-      "id": "email-4tmmepjlj",
+      "id": "email-sen4j73mp",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "⏰ Last chance to light up the season.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2025-10-17T17:46:57.000Z",
-      "extractedSummary": "Secure up to ₹10000 instant cashback and No Cost EMI tenures on Apple products before the promotional offers expire on October 23, 2025.",
+      "extractedSummary": "Billing notification: ⏰ Last chance to light up the season..",
       "rawSnippet": "Get your festive gifts at Apple Store Online. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/199f3482e68ccddc"
     },
     {
-      "id": "email-vpl7nl2xn",
+      "id": "email-2d6wnx4qi",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
       "subject": "⏰ Last chance to light up the season.",
       "sender": "Apple <News@insideapple.apple.com>",
       "category": "Bills",
       "date": "2025-10-17T02:41:29.000Z",
-      "extractedSummary": "Take advantage of corrected festive pricing on Apple products to get up to ₹10000 instant cashback before the promotion ends on October 23, 2025.",
+      "extractedSummary": "Billing notification: ⏰ Last chance to light up the season..",
       "rawSnippet": "Get your festive gifts at Apple Store Online. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/199f00b388c5d321"
     }
@@ -1974,6 +2086,26 @@
       "priority": "High",
       "category": "Medical Consults",
       "notes": "Routine vaccination and physical growth checkup."
+    },
+    {
+      "id": "cal-1",
+      "status": "Upcoming",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "name": "Doctor Consult - Cardiology",
+      "date": "2026-07-20",
+      "time": "11:30 AM",
+      "location": "Stanford Health Clinic Room 310",
+      "notes": "Follow-up ECG examination. Fast 4 hours before."
+    },
+    {
+      "id": "cal-2",
+      "status": "Upcoming",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "name": "School PTA Board Meeting",
+      "date": "2026-07-22",
+      "time": "05:00 PM",
+      "location": "Trinity Elementary Main Hall",
+      "notes": "Discussion of next quarter sports budget and field trip."
     }
   ],
   "checkIns": {
@@ -1981,6 +2113,11 @@
       "2026-07-17": {
         "date": "2026-07-17",
         "timestamp": "2026-07-17T09:26:26.129Z",
+        "method": "login"
+      },
+      "2026-07-18": {
+        "date": "2026-07-18",
+        "timestamp": "2026-07-18T03:28:22.640Z",
         "method": "login"
       }
     },
@@ -2017,15 +2154,15 @@
     },
     "user_3Gcona6Lmnf2lyPcQszgGcAOErX": {
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "lastCheckInDate": "2026-07-17",
-      "lastCheckInTimestamp": "2026-07-17T09:26:26.129Z",
+      "currentStreak": 2,
+      "longestStreak": 2,
+      "lastCheckInDate": "2026-07-18",
+      "lastCheckInTimestamp": "2026-07-18T03:28:22.644Z",
       "status": "Verified",
       "lastKnownLocation": {
         "latitude": 37.765165970097755,
         "longitude": -122.41495977754705,
-        "timestamp": "2026-07-17T09:26:26.129Z",
+        "timestamp": "2026-07-18T03:28:22.645Z",
         "batteryLevel": 94,
         "isCharging": true
       }
@@ -2260,6 +2397,16 @@
       "method": "missed",
       "methodLabel": "Missed Check-In",
       "status": "Missed"
+    },
+    {
+      "id": "evt-ohmzoakzm",
+      "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
+      "timestamp": "2026-07-18T03:28:22.648Z",
+      "date": "2026-07-18",
+      "time": "8:58:22 AM",
+      "method": "login",
+      "methodLabel": "App Login",
+      "status": "Success"
     }
   ]
 }
