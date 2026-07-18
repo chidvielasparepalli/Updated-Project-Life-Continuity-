@@ -23,6 +23,12 @@
       "email": "gamingwithchidvi@gmail.com",
       "name": "Gaming with Chidvi",
       "createdAt": "2026-07-17T11:53:33.635Z"
+    },
+    "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL": {
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "email": "chidvielasparepalli@gmail.com",
+      "name": "CHIDVIELAS PAREPALLI",
+      "createdAt": "2026-07-18T04:51:26.806Z"
     }
   },
   "emergencyProfiles": {
@@ -78,9 +84,50 @@
       "nomineePhone": "",
       "nomineeName": "",
       "trustedContacts": []
+    },
+    "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL": {
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "CHIDVIELAS PAREPALLI",
+      "age": 30,
+      "bloodGroup": "O+",
+      "emergencyContactName": "",
+      "emergencyContactPhone": "",
+      "medicalInfo": "",
+      "nomineePin": "1111",
+      "nomineePhone": "",
+      "nomineeName": "",
+      "trustedContacts": []
     }
   },
   "securityAlerts": [
+    {
+      "id": "alert-f3qwxkwaa",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "timestamp": "2026-07-18T04:56:27.657Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-ext1p2r32",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "timestamp": "2026-07-18T04:52:55.480Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-6lpq1u685",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "timestamp": "2026-07-18T04:51:26.900Z",
+      "event": "User Sign In",
+      "details": "Logged in via Clerk Authentication"
+    },
+    {
+      "id": "alert-fhmjfbm9s",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "timestamp": "2026-07-18T04:51:26.830Z",
+      "event": "Account Created",
+      "details": "User signed up/registered via Clerk."
+    },
     {
       "id": "alert-pzhxiqwg2",
       "uid": "user_3Gcona6Lmnf2lyPcQszgGcAOErX",
@@ -1788,6 +1835,94 @@
       "extractedSummary": "Billing notification: ⏰ Last chance to light up the season..",
       "rawSnippet": "Get your festive gifts at Apple Store Online. ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
       "gmailUrl": "https://mail.google.com/mail/u/0/#all/199f00b388c5d321"
+    },
+    {
+      "id": "email-6ljpi8ob3",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Rapido Invoice",
+      "sender": "partner@rapido.bike",
+      "category": "Bills",
+      "date": "2026-07-05T13:34:48.000Z",
+      "extractedSummary": "Billing notification: Rapido Invoice.",
+      "rawSnippet": "Payment Summary Payment Summary Ride ID RD17832551342005552 Time of Ride Jul 5th 2026, 7:04 PM Total ₹ 152.00 15.50 kms DISTANCE 43.07 mins DURATION &",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f327d22836de17"
+    },
+    {
+      "id": "email-vyy8u84r3",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Rapido Invoice",
+      "sender": "partner@rapido.bike",
+      "category": "Bills",
+      "date": "2026-07-05T06:03:21.000Z",
+      "extractedSummary": "Billing notification: Rapido Invoice.",
+      "rawSnippet": "Payment Summary Payment Summary Ride ID RD17832285640074688 Time of Ride Jul 5th 2026, 11:33 AM Total ₹ 183.00 18.95 kms DISTANCE 44.08 mins DURATION ",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f30dfd1f9de565"
+    },
+    {
+      "id": "email-eg7c4paaa",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Booking Request Received",
+      "sender": "Mahesh Tattoo Studio <booking@maheshtattoostudio.in>",
+      "category": "Travel",
+      "date": "2026-06-30T15:19:06.000Z",
+      "extractedSummary": "Travel booking details: Booking Request Received.",
+      "rawSnippet": "THANK YOU FOR BOOKING WITH MAHESH TATTOOS & ARTS!\r\n\r\nHi chidvi,\r\n\r\nWe've received your tattoo booking request successfully.\r\n\r\nTattoo Style: Blood Art",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f191cd22e5d382"
+    },
+    {
+      "id": "email-voi36lxdm",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Booking Request Received",
+      "sender": "Mahesh Tattoo Studio <booking@maheshtattoostudio.in>",
+      "category": "Travel",
+      "date": "2026-06-29T16:26:05.000Z",
+      "extractedSummary": "Travel booking details: Booking Request Received.",
+      "rawSnippet": "THANK YOU FOR BOOKING WITH MAHESH TATTOOS & ARTS!\r\n\r\nHi chidvi,\r\n\r\nWe've received your tattoo booking request successfully.\r\n\r\nTattoo Style: Pencil Sk",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f1433cacfcc8b6"
+    },
+    {
+      "id": "email-tts7ufwv8",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Booking Request Received",
+      "sender": "Mahesh Tattoo Studio <booking@maheshtattoostudio.in>",
+      "category": "Travel",
+      "date": "2026-06-29T09:51:11.000Z",
+      "extractedSummary": "Travel booking details: Booking Request Received.",
+      "rawSnippet": "THANK YOU FOR BOOKING WITH MAHESH TATTOOS & ARTS!\r\n\r\nHi chidvielas,\r\n\r\nWe've received your tattoo booking request successfully.\r\n\r\nTattoo Style: Black",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f12ca40466bb17"
+    },
+    {
+      "id": "email-hj8jjzkj0",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Booking Request Received",
+      "sender": "Mahesh Tattoo Studio <booking@maheshtattoostudio.in>",
+      "category": "Travel",
+      "date": "2026-06-29T08:31:24.000Z",
+      "extractedSummary": "Travel booking details: Booking Request Received.",
+      "rawSnippet": "THANK YOU FOR BOOKING WITH MAHESH TATTOOS & ARTS!\r\n\r\nHi chidvielas,\r\n\r\nWe've received your tattoo booking request successfully.\r\n\r\nTattoo Style: Reali",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19f12813712cda50"
+    },
+    {
+      "id": "email-lsn4runq7",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Rapido Invoice",
+      "sender": "partner@rapido.bike",
+      "category": "Bills",
+      "date": "2026-06-21T14:33:41.000Z",
+      "extractedSummary": "Billing notification: Rapido Invoice.",
+      "rawSnippet": "Payment Summary Payment Summary Ride ID RD17820508857457705 Time of Ride Jun 21st 2026, 8:03 PM Total ₹ 71.00 7.82 kms DISTANCE 16.80 mins DURATION &n",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19eea9a03291e5ae"
+    },
+    {
+      "id": "email-ea70bdixf",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "subject": "Codex Product Update: Codex comes to your phone and works in Chrome",
+      "sender": "OpenAI <noreply@email.openai.com>",
+      "category": "Bills",
+      "date": "2026-05-22T16:21:31.000Z",
+      "extractedSummary": "Billing notification: Codex Product Update: Codex comes to your phone and works in Chrome.",
+      "rawSnippet": "New features and resources to help you keep work moving with Codex\r\n‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏  ‍͏  ͏",
+      "gmailUrl": "https://mail.google.com/mail/u/0/#all/19e507df603668db"
     }
   ],
   "bills": [
@@ -1980,6 +2115,50 @@
       "category": "School Fees",
       "priority": "Medium",
       "notes": "Quarterly tuition fee payment."
+    },
+    {
+      "id": "bill-1-user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL-caez4",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "PG&E Electricity & Gas",
+      "dueDate": "2026-07-21",
+      "amount": 142.5,
+      "status": "Pending",
+      "category": "Upcoming Bills",
+      "priority": "Medium",
+      "notes": "Monthly utilities for electricity and gas heating."
+    },
+    {
+      "id": "bill-2-user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL-3afal",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "Comcast Xfinity Internet",
+      "dueDate": "2026-07-24",
+      "amount": 85,
+      "status": "Pending",
+      "category": "Upcoming Bills",
+      "priority": "Low",
+      "notes": "High-speed broadband internet subscription fee."
+    },
+    {
+      "id": "bill-3-user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL-ynrat",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "Chase Auto Loan Amortization",
+      "dueDate": "2026-07-23",
+      "amount": 350,
+      "status": "Pending",
+      "category": "Loans/EMIs",
+      "priority": "High",
+      "notes": "Auto-debit loan payment for household vehicle."
+    },
+    {
+      "id": "bill-4-user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL-c3ews",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "Trinity School Fees",
+      "dueDate": "2026-07-26",
+      "amount": 400,
+      "status": "Pending",
+      "category": "School Fees",
+      "priority": "Medium",
+      "notes": "Quarterly tuition fee payment."
     }
   ],
   "appointments": [
@@ -2106,6 +2285,30 @@
       "time": "05:00 PM",
       "location": "Trinity Elementary Main Hall",
       "notes": "Discussion of next quarter sports budget and field trip."
+    },
+    {
+      "id": "appt-1-user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL-qik2x",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "Routine Dental Care & Cleaning",
+      "date": "2026-07-20",
+      "time": "10:00 AM",
+      "status": "Upcoming",
+      "location": "Apex Dentistry Suite 2B",
+      "priority": "Medium",
+      "category": "Medical Consults",
+      "notes": "Bi-annual teeth cleaning and visual dental exam."
+    },
+    {
+      "id": "appt-2-user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL-ta1gr",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "name": "Kaiser Pediatrician Consult (Emma)",
+      "date": "2026-07-25",
+      "time": "02:30 PM",
+      "status": "Upcoming",
+      "location": "Pediatrics Desk A, Kaiser Permanente",
+      "priority": "High",
+      "category": "Medical Consults",
+      "notes": "Routine vaccination and physical growth checkup."
     }
   ],
   "checkIns": {
@@ -2132,6 +2335,13 @@
       "2026-07-17": {
         "date": "2026-07-17",
         "timestamp": "2026-07-17T11:53:33.648Z",
+        "method": "login"
+      }
+    },
+    "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL": {
+      "2026-07-18": {
+        "date": "2026-07-18",
+        "timestamp": "2026-07-18T04:51:26.837Z",
         "method": "login"
       }
     }
@@ -2196,6 +2406,21 @@
         "batteryLevel": 94,
         "isCharging": true
       }
+    },
+    "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL": {
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "lastCheckInDate": "2026-07-18",
+      "lastCheckInTimestamp": "2026-07-18T04:51:26.843Z",
+      "status": "Verified",
+      "lastKnownLocation": {
+        "latitude": 37.76587533713844,
+        "longitude": -122.41709021749676,
+        "timestamp": "2026-07-18T04:51:26.843Z",
+        "batteryLevel": 94,
+        "isCharging": true
+      }
     }
   },
   "checkInSettings": {
@@ -2248,6 +2473,18 @@
       "gracePeriodMinutes": 120,
       "sendersToSync": "",
       "targetKeywords": "Games"
+    },
+    "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL": {
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "checkInWindowStart": "08:00",
+      "checkInWindowEnd": "20:00",
+      "reminderIntervals": [
+        120,
+        60,
+        15
+      ],
+      "gracePeriodMinutes": 120,
+      "targetKeywords": ""
     }
   },
   "continuityPlans": {},
@@ -2404,6 +2641,16 @@
       "timestamp": "2026-07-18T03:28:22.648Z",
       "date": "2026-07-18",
       "time": "8:58:22 AM",
+      "method": "login",
+      "methodLabel": "App Login",
+      "status": "Success"
+    },
+    {
+      "id": "evt-biltzprjw",
+      "uid": "user_3Gf6T6vJDCoF2uhIvvE7G0pBRTL",
+      "timestamp": "2026-07-18T04:51:26.850Z",
+      "date": "2026-07-18",
+      "time": "10:21:26 AM",
       "method": "login",
       "methodLabel": "App Login",
       "status": "Success"
