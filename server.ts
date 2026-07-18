@@ -34,21 +34,7 @@ const allowedOrigins = [
 // Configure CORS first
 app.use(cors({
   origin: (origin, callback) => {
-    console.log(`[CORS ORIGIN CHECK] Request Origin: "${origin}"`);
-    if (!origin) {
-      console.log(`[CORS ORIGIN CHECK] Allowed (No origin, e.g. same-origin or server-to-server)`);
-      return callback(null, true);
-    }
-    const isAllowed = allowedOrigins.indexOf(origin) !== -1 ||
-      origin.startsWith("http://localhost:") ||
-      origin.endsWith(".vercel.app") ||
-      origin.endsWith(".railway.app");
-    console.log(`[CORS ORIGIN CHECK] Origin "${origin}" allowed: ${isAllowed}`);
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(null, false);
-    }
+    callback(null, true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
